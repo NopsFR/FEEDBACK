@@ -55,11 +55,17 @@ pub fn handle<R: tauri::Runtime>(app: &tauri::AppHandle<R>, req: &Request<Vec<u8
     match parts.as_slice() {
         ["track", id] => {
             let Ok(id) = id.parse::<i64>() else { return plain(StatusCode::BAD_REQUEST) };
-            let file_path = match state.db.with(|c| crate::library::mutate::track_path(c, id)) {
-                Ok(Some(p)) => p,
-                _ => return plain(StatusCode::NOT_FOUND),
-            };
-            serve_file(&file_path, req.headers().get(header::RANGE).and_then(|v| v.to_str().ok()))
+            let row = state.db.with(|c| {
+                use rusqlite::OptionalExtension;
+                c.query_row("SELECT path, codec, duration_ms FROM track WHERE id = ?1", [id], |r| Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?, r.get::<_, i64>(2)?)))
+                    .optional()
+            });
+            let Ok(Some((file_path, codec, duration_ms))) = row else { return plain(StatusCode::NOT_FOUND) };
+            let range = req.headers().get(header::RANGE).and_then(|v| v.to_str().ok());
+            if crate::transcode::needs_transcode(codec.as_deref()) {
+                return serve_transcoded(&file_path, range, duration_ms);
+            }
+            serve_file(&file_path, range)
         }
         ["art", hash, size] => serve_art(&state.art, hash, size),
         _ => plain(StatusCode::NOT_FOUND),
@@ -108,6 +114,33 @@ fn serve_file(file_path: &str, range: Option<&str>) -> Response<Vec<u8>> {
         b = b.status(StatusCode::OK);
     }
     b.body(buf).unwrap()
+}
+
+fn serve_transcoded(file_path: &str, range: Option<&str>, duration_ms: i64) -> Response<Vec<u8>> {
+    const CHUNK: u64 = 2 * 1024 * 1024;
+    let start = range
+        .and_then(|r| r.strip_prefix("bytes="))
+        .and_then(|r| r.split('-').next())
+        .and_then(|a| a.parse::<u64>().ok())
+        .unwrap_or(0);
+    match crate::transcode::read_window(std::path::Path::new(file_path), start, CHUNK, duration_ms) {
+        Ok(w) => {
+            let end = w.start + w.bytes.len() as u64 - 1;
+            Response::builder()
+                .status(StatusCode::PARTIAL_CONTENT)
+                .header(header::CONTENT_TYPE, "audio/wav")
+                .header(header::ACCEPT_RANGES, "bytes")
+                .header(header::CONTENT_RANGE, format!("bytes {}-{}/{}", w.start, end, w.total))
+                .header(header::CONTENT_LENGTH, w.bytes.len().to_string())
+                .header("Access-Control-Allow-Origin", "*")
+                .body(w.bytes)
+                .unwrap()
+        }
+        Err(e) => {
+            log::warn!(target: "PLAYER", "transcode failed for {file_path}: {e}");
+            plain(StatusCode::UNSUPPORTED_MEDIA_TYPE)
+        }
+    }
 }
 
 fn serve_art(art: &ArtCache, hash: &str, size: &str) -> Response<Vec<u8>> {

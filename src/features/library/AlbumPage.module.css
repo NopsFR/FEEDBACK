@@ -28,6 +28,7 @@
 }
 .text {
   min-width: 0;
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -37,7 +38,7 @@
   font-family: var(--font-display);
   font-stretch: 125%;
   font-weight: 880;
-  font-size: clamp(38px, 5.4vw, 88px);
+  font-size: clamp(32px, 12cqi, 88px);
   line-height: 0.9;
   letter-spacing: -0.02em;
   text-transform: uppercase;
@@ -48,7 +49,7 @@
   overflow: hidden;
 }
 .title[data-long] {
-  font-size: clamp(30px, 3.8vw, 60px);
+  font-size: clamp(26px, 8cqi, 60px);
 }
 .artist {
   margin-top: 14px;

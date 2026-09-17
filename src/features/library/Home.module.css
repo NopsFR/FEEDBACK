@@ -39,6 +39,7 @@
 }
 .featureText {
   position: relative;
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -51,7 +52,7 @@
   font-family: var(--font-display);
   font-stretch: 125%;
   font-weight: 880;
-  font-size: clamp(36px, 5.2vw, 84px);
+  font-size: clamp(32px, 11cqi, 84px);
   line-height: 0.9;
   text-transform: uppercase;
   letter-spacing: -0.02em;
@@ -76,6 +77,8 @@
 }
 .featureActions {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
   margin-top: 26px;
 }

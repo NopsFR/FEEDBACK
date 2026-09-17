@@ -5,6 +5,7 @@ mod library;
 mod media;
 mod metadata;
 mod state;
+mod transcode;
 
 use state::{AppState, ScanControl};
 use tauri::Manager;

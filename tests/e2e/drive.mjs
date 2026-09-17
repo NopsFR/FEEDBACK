@@ -24,10 +24,10 @@ for (const s of steps) {
   if (s.type) await page.keyboard.type(s.type, { delay: 20 });
   if (s.wait) await page.waitForTimeout(s.wait);
   if (s.size) {
-    await page.evaluate(async ([w, h]) => {
-      const { getCurrentWindow, LogicalSize } = window.__feedback.win;
-      await getCurrentWindow().setSize(new LogicalSize(w, h));
-    }, s.size);
+    // Emulated viewport (doesn't move the real window). [0,0] clears the override.
+    const cdp = await page.context().newCDPSession(page);
+    if (s.size[0] === 0) await cdp.send("Emulation.clearDeviceMetricsOverride");
+    else await cdp.send("Emulation.setDeviceMetricsOverride", { width: s.size[0], height: s.size[1], deviceScaleFactor: s.size[2] ?? 1, mobile: !!s.size[3] });
     await page.waitForTimeout(400);
   }
   if (s.shot) {

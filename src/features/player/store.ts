@@ -103,7 +103,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
     },
     onError: (message) => {
       const cur = get().current;
-      set({ error: message });
+      set({ error: message, buffering: false, playing: false });
       toast(cur ? `Skipped “${cur.title}” — ${message.toLowerCase()}` : message, "error");
       // avoid infinite skip loops on a queue of broken files
       errorStreak++;

@@ -78,14 +78,8 @@ fn codec_name(ft: FileType, path: &Path) -> String {
         FileType::Wav => "WAV".into(),
         FileType::Aac => "AAC".into(),
         FileType::Mp4 => {
-            // Distinguish ALAC from AAC inside MP4 containers.
-            let is_alac = std::fs::File::open(path).ok().and_then(|mut f| {
-                use std::io::Read;
-                let mut buf = vec![0u8; 256 * 1024];
-                let n = f.read(&mut buf).ok()?;
-                Some(buf[..n].windows(4).any(|w| w == b"alac"))
-            });
-            if is_alac == Some(true) { "ALAC".into() } else { "AAC".into() }
+            // AAC and ALAC share the MP4 container; ask symphonia which codec the audio track uses.
+            if crate::transcode::probe_is_alac(path) { "ALAC".into() } else { "AAC".into() }
         }
         FileType::Vorbis => "Vorbis".into(),
         FileType::Opus => "Opus".into(),

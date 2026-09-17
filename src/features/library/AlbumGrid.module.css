@@ -17,12 +17,11 @@
   overflow-x: auto;
   padding: 4px 2px 18px;
   margin: -4px -2px 0;
-  scroll-snap-type: x proximity;
   scrollbar-width: none;
 }
 .shelf::-webkit-scrollbar {
   display: none;
 }
 .shelfItem {
-  scroll-snap-align: start;
+  min-width: 0;
 }

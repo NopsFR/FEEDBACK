@@ -7,9 +7,10 @@ Local-first music + music-video player. Tauri 2 (Rust) + React 19 + TypeScript +
 ## Machine / workflow
 - Canonical repo + git history: `C:\Users\nator\FEEDBACK` on Windows 11 (i7-14700KF, 32GB). Build/run there.
 - Windows shell access: Desktop Commander `start_process` (PowerShell). `device_bash` is unreliable on this machine — don't rely on it.
-- Cloud container (if used) is a scratch working copy. Sync = tar.gz → `device_commit_files` into `C:\Users\nator\FEEDBACK\.sync\` → verify SHA256 on Windows → `tar -xzf` in repo root. Always hash-verify commits.
+- Cloud container (if used) is a scratch working copy. Sync = tar.gz → `device_commit_files` into `C:\Users\nator\FEEDBACK\.sync\` → verify SHA256 on Windows → `tar -xzf` in repo root. Always hash-verify commits: `device_commit_files` usually writes a stale copy on the first call — commit twice, then run `.sync/apply.ps1 -Hash <sha>`.
 - Toolchain on Windows: Node 24, pnpm 11, Rust 1.97 (msvc), VS 2026 Build Tools (MSVC 14.51, SDK 10.0.26100), WebView2 153, Python 3.13, Blender 5.2.1 (`C:\Program Files\Blender Foundation\Blender 5.2\blender.exe`, run headless with `-b -P script.py`). No Adobe apps, no Android SDK, no macOS.
 - crates.io is reachable from Windows, not from the cloud container. npm registry reachable from both.
+- Screenshot QA without touching the user's mouse: run dev with `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222`, then `node tests/e2e/drive.mjs <steps.json> .sync/qaN` and stage the PNGs.
 - Blender: prefer headless CLI scripts in `design/blender/*.py`. If the MCP bridge fails, don't burn time on it.
 - User doesn't want routine status messages. Only interrupt for real blockers.
 

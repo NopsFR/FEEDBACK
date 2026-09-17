@@ -116,6 +116,10 @@ const MIGRATIONS: &[&str] = &[
         prefix='2 3'
     );
     "#,
+    // 2 — re-read MP4 audio so ALAC is detected correctly (codec probe moved to symphonia)
+    r#"
+    UPDATE track SET mtime = 0 WHERE lower(path) LIKE '%.m4a' OR lower(path) LIKE '%.mp4';
+    "#,
 ];
 
 pub fn run(conn: &mut Connection) -> rusqlite::Result<()> {
