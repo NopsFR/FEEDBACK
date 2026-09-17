@@ -258,3 +258,16 @@
   height: 200px;
   display: block;
 }
+.dl {
+  display: flex;
+  gap: 8px;
+}
+.dl input {
+  width: 260px;
+  height: 38px;
+  padding: 0 10px;
+  background: var(--ink-0);
+  border: 1px solid var(--line-2);
+  color: var(--paper-1);
+  border-radius: var(--r-1);
+}

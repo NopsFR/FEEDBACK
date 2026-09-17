@@ -10,6 +10,7 @@ import { toast, toastError, type MenuItem } from "@/state/ui";
 import { isTauri } from "@/services/platform";
 import * as offline from "@/services/offline";
 import { bytes } from "@/lib/format";
+import { editTracks } from "./MetadataEditor";
 
 const I = (n: Parameters<typeof Icon>[0]["name"]) => <Icon name={n} size={16} />;
 
@@ -93,6 +94,7 @@ export function trackMenu(tracks: Track[], opts: { playlistId?: number; entryIds
   } else {
     items.push({ label: "Favourite all", icon: I("heart"), run: () => tracks.forEach((t) => toggleFavourite(t, true)) });
   }
+  if (isTauri) items.push({ label: tracks.length > 1 ? "Edit details…" : "Edit details…", icon: I("edit"), run: () => editTracks(tracks) });
   if (opts.playlistId && opts.entryIds?.length) {
     items.push({ label: "", separator: true });
     items.push({
@@ -169,6 +171,9 @@ export function albumMenu(album: Album): MenuItem[] {
     { label: "Add to playlist", icon: I("playlist"), submenu: playlistSubmenu(async () => (await library.album(album.id)).tracks) },
     { label: "", separator: true },
     ...(album.artistId ? [{ label: `Go to ${album.artist}`, icon: I("artists"), run: () => nav.go({ name: "artist", id: album.artistId! }) }] : []),
+    ...(isTauri
+      ? [{ label: "Edit album…", icon: I("edit"), run: async () => editTracks((await library.album(album.id)).tracks, album) } as MenuItem]
+      : []),
     ...offlineItems,
   ];
 }

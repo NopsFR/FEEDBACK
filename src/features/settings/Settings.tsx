@@ -106,6 +106,44 @@ function Folders() {
   );
 }
 
+function DownloadLink() {
+  const [url, setUrl] = useState("");
+  const [status, setStatus] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isTauri) return;
+    let un: (() => void) | undefined;
+    void import("@tauri-apps/api/event").then(({ listen }) =>
+      listen<{ fileName: string; received: number; total: number | null; state: string; message: string | null }>("download-progress", (e) => {
+        const p = e.payload;
+        if (p.state === "error") setStatus(p.message ?? "Download failed.");
+        else if (p.state === "done") setStatus(`Saved “${p.fileName}” — it'll appear after the scan.`);
+        else setStatus(`${p.fileName}: ${p.total ? Math.round((p.received / p.total) * 100) + "%" : `${(p.received / 1048576).toFixed(1)} MB`}`);
+      }).then((f) => (un = f)),
+    );
+    return () => un?.();
+  }, []);
+  return (
+    <Row label="Download from a link" hint={status ?? "Paste a direct link to an audio or video file you're entitled to (a band's own download, a purchase link). Streaming sites and web pages aren't supported."}>
+      <form
+        className={s.dl}
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!url.trim()) return;
+          setStatus("Starting…");
+          call<string>("download_url", { url: url.trim() })
+            .then(() => setUrl(""))
+            .catch((err) => setStatus(err instanceof Error ? err.message : "Download failed."));
+        }}
+      >
+        <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…/track.flac" spellCheck={false} />
+        <Button type="submit" variant="secondary" disabled={!url.trim()}>
+          Download
+        </Button>
+      </form>
+    </Row>
+  );
+}
+
 function Equaliser() {
   const { eqEnabled, eqBands, eqPreset, set } = useSettings();
   return (
@@ -191,6 +229,7 @@ export function Settings({ section }: { section?: string }) {
         )}
         {isTauri && <Group id="library" n="01" title="Library">
           <Folders />
+          <DownloadLink />
           <Row label="Drag and drop" hint="Drop folders onto the window to add them. Drop files and they're copied into a “FEEDBACK Imports” folder in Music.">
             <span className={s.muted}>Always on</span>
           </Row>

@@ -1,5 +1,6 @@
 mod commands;
 mod database;
+mod downloads;
 mod error;
 mod library;
 mod media;
@@ -113,6 +114,9 @@ pub fn run() {
             commands::get_lyrics,
             commands::remove_tracks,
             commands::lan_status,
+            commands::edit_tracks,
+            commands::set_album_art,
+            commands::download_url,
             commands::lan_set_enabled,
             commands::lan_new_code,
             commands::lan_revoke,

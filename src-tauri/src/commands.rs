@@ -422,3 +422,77 @@ pub async fn lan_revoke(app: AppHandle, id: i64) -> AppResult<LanStatus> {
     app.state::<AppState>().db.with(|c| crate::sync::revoke_device(c, id))?;
     lan_snapshot(&app)
 }
+
+// ---------- metadata editing ----------
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EditResult {
+    pub written: usize,
+    pub failed: Vec<String>,
+}
+
+#[tauri::command]
+pub async fn edit_tracks(app: AppHandle, state: S<'_>, ids: Vec<i64>, edit: crate::metadata::write::TagEdit) -> AppResult<EditResult> {
+    let paths: Vec<(i64, String)> = ids.iter().filter_map(|id| state.db.with(|c| mutate::track_path(c, *id)).ok().flatten().map(|p| (*id, p))).collect();
+    let mut r = EditResult { written: 0, failed: vec![] };
+    for (_, p) in &paths {
+        match crate::metadata::write::write(Path::new(p), &edit) {
+            Ok(()) => r.written += 1,
+            Err(e) => {
+                log::warn!(target: "LIBRARY", "tag write failed for {p}: {e}");
+                r.failed.push(Path::new(p).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default());
+            }
+        }
+    }
+    if r.written > 0 {
+        start_scan_inner(&app);
+    }
+    Ok(r)
+}
+
+/// Custom album artwork chosen by the user. Stored in FEEDBACK's artwork cache; the audio files are not modified.
+#[tauri::command]
+pub async fn set_album_art(app: AppHandle, state: S<'_>, album_id: i64, image_path: String) -> AppResult<Option<String>> {
+    let bytes = std::fs::read(&image_path)?;
+    if bytes.len() > 40 * 1024 * 1024 {
+        return Err(AppError::User("That image is too large (40 MB max).".into()));
+    }
+    let hash = state.db.with(|c| Ok(state.art.store(c, &bytes, None)))?;
+    let Some(hash) = hash else { return Err(AppError::User("That file isn't an image FEEDBACK can read.".into())) };
+    state.db.with(|c| {
+        c.execute("UPDATE album SET artwork_hash = ?2 WHERE id = ?1", rusqlite::params![album_id, hash])?;
+        c.execute("UPDATE track SET artwork_hash = ?2 WHERE album_id = ?1", rusqlite::params![album_id, hash])?;
+        Ok(())
+    })?;
+    let _ = app.emit("library-changed", ());
+    Ok(Some(hash))
+}
+
+// ---------- direct downloads ----------
+#[tauri::command]
+pub async fn download_url(app: AppHandle, state: S<'_>, url: String) -> AppResult<String> {
+    crate::downloads::validate_url(&url).map_err(AppError::User)?;
+    let dest_dir = state.imports_dir.clone();
+    let id = crate::sync::random_hex(6);
+    let id2 = id.clone();
+    let app2 = app.clone();
+    std::thread::spawn(move || {
+        let emitter = app2.clone();
+        let res = crate::downloads::download(&url, &dest_dir, &id2, |p| {
+            let _ = emitter.emit("download-progress", p);
+        });
+        match res {
+            Ok(_) => {
+                let st = app2.state::<AppState>();
+                let _ = st.db.with(|c| mutate::add_folder(c, &dunce_like(&dest_dir)));
+                restart_watcher(&app2);
+                start_scan_inner(&app2);
+            }
+            Err(message) => {
+                log::warn!(target: "DOWNLOAD", "{message}");
+                let _ = app2.emit("download-progress", crate::downloads::Progress { id: id2.clone(), file_name: String::new(), received: 0, total: None, state: "error", message: Some(message) });
+            }
+        }
+    });
+    Ok(id)
+}

@@ -416,7 +416,7 @@ def scene_disc():
     world_dark()
     floor()
     disc, parts = make_disc()
-    disc.location = (0, 0, 0.034)
+    disc.location = (0, 0, 0.06 * math.sin(math.radians(62)) + 0.001)
     disc.rotation_euler = (math.radians(62), 0, math.radians(18))
     # a second disc lying flat, out of focus
     d2, _ = make_disc(name="DiscBack")
@@ -430,7 +430,7 @@ def scene_disc():
     strip.data.shape = "RECTANGLE"
     strip.data.size_y = 0.03
     aim(strip, (0, 0, 0.03))
-    camera((0.02, -0.34, 0.12), (0, 0, 0.035), lens=70, fstop=2.2)
+    camera((0.02, -0.36, 0.13), (0, 0, 0.05), lens=65, fstop=2.2)
     render_settings()
     render(os.path.join(RENDERS, "disc-hero.png"))
     export_glb([disc], os.path.join(EXPORTS, "feedback-disc.glb"))
@@ -442,7 +442,7 @@ def scene_case():
     case = make_case()
     case.location = (0, 0, 0)
     case.rotation_euler = (math.radians(86), 0, math.radians(-14))
-    case.location = (0, 0.02, 0.0)
+    case.location = (0, 0.02, 0.125 / 2 * math.sin(math.radians(86)) + 0.001)
     pts = coil_points(0.06, -0.12, 0.0, 0.045, tail=(0.08, -0.06))
     cable = make_cable(points=pts)
     jack = make_jack("Jack")
@@ -463,15 +463,15 @@ def scene_stilllife():
     world_dark()
     floor()
     case = make_case()
-    case.rotation_euler = (math.radians(80), 0, math.radians(8))
-    case.location = (0.02, 0.06, 0.0)
+    case.rotation_euler = (math.radians(82), 0, math.radians(8))
+    case.location = (0.02, 0.06, 0.125 / 2 * math.sin(math.radians(82)) + 0.001)
     disc, _ = make_disc()
     disc.rotation_euler = (math.radians(74), 0, math.radians(-24))
-    disc.location = (-0.085, 0.0, 0.058)
-    for i in range(3):  # a small stack of cases lying down
-        c = make_case(name=f"Stack{i}")
-        c.location = (0.15, 0.02, 0.0105 * i)
-        c.rotation_euler = (0, 0, math.radians(-38 + random.uniform(-6, 6)))
+    disc.location = (-0.085, 0.0, 0.06 * math.sin(math.radians(74)) + 0.0008)
+    flat, _ = make_disc(name="DiscFlat")  # a second disc face-down on the stage
+    flat.location = (0.14, -0.02, 0.0001)
+    flat.rotation_euler = (math.radians(180), 0, math.radians(30))
+    flat.location.z = 0.0013
     pts = coil_points(-0.03, -0.12, 0.0, 0.05, loops=2.2, n=44, drift=0.02, tail=(0.11, -0.03))
     make_cable(points=pts)
     jack = make_jack("Jack")
