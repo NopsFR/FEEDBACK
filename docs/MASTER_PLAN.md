@@ -22,10 +22,10 @@
 - [x] Windows SMTC: session appears in the OS media flyout with title/artist; pause from Windows verified, next/previous exposed (session is listed under the WebView2 host name)
 - [x] Layout QA at 980×640 (min window), 1280×720@150%, 1536×864@125%, 2560×1440; content column widens on large displays
 - [x] Startup intro FULL frames checked (carrier line → spikes → misregistered print → tear exit)
+- [x] Rule-based smart playlists (all/any rules across metadata, dates, plays, favourites, codec and duration; safe bound SQL; editable sorting and limits)
 
 ## Open
 - [~] iPhone: test on a real device (certificate trust, Home Screen install, lock-screen playback) — see MOBILE.md checklist
-- [ ] Rule-based smart playlists (year/genre/plays filters) — current smart lists are fixed views
 - [ ] Phone: edit playlists/favourites offline and reconcile on reconnect (currently favourites/plays sync; playlists are read-only on phone)
 - [ ] Use the disc GLB in-app (e.g. Now Playing "disc" mode) — assets exist, runtime not integrated
 - [ ] Android build (needs Android SDK/NDK install) and native iOS (needs a Mac) — see IOS.md

@@ -380,19 +380,21 @@ pub struct PlaylistRow {
     pub duration_ms: i64,
     pub updated_at: i64,
     pub arts: Vec<String>,
+    pub rules: Option<serde_json::Value>,
 }
 
 fn playlists_where(conn: &Connection, clause: &str, p: impl rusqlite::Params) -> rusqlite::Result<Vec<PlaylistRow>> {
     let sql = format!(
         "SELECT p.id, p.name, p.description, COUNT(t.id), COALESCE(SUM(t.duration_ms), 0), p.updated_at,
             (SELECT group_concat(h, ',') FROM (SELECT DISTINCT t2.artwork_hash AS h FROM playlist_track pt2 JOIN track t2 ON t2.id = pt2.track_id
-                WHERE pt2.playlist_id = p.id AND t2.artwork_hash IS NOT NULL ORDER BY pt2.position LIMIT 4))
+                WHERE pt2.playlist_id = p.id AND t2.artwork_hash IS NOT NULL ORDER BY pt2.position LIMIT 4)), p.rules
          FROM playlist p LEFT JOIN playlist_track pt ON pt.playlist_id = p.id LEFT JOIN track t ON t.id = pt.track_id AND t.missing = 0
          {clause} GROUP BY p.id ORDER BY p.updated_at DESC"
     );
     let mut stmt = conn.prepare_cached(&sql)?;
     let rows = stmt.query_map(p, |r| {
         let arts: Option<String> = r.get(6)?;
+        let rules_text: Option<String> = r.get(7)?;
         Ok(PlaylistRow {
             id: r.get(0)?,
             name: r.get(1)?,
@@ -401,9 +403,18 @@ fn playlists_where(conn: &Connection, clause: &str, p: impl rusqlite::Params) ->
             duration_ms: r.get(4)?,
             updated_at: r.get(5)?,
             arts: arts.map(|s| s.split(',').map(str::to_string).collect()).unwrap_or_default(),
+            rules: rules_text.and_then(|v| serde_json::from_str(&v).ok()),
         })
     })?;
-    rows.collect()
+    let mut playlists = rows.collect::<rusqlite::Result<Vec<_>>>()?;
+    for playlist in playlists.iter_mut().filter(|p| p.rules.is_some()) {
+        let rules: super::smart::Rules = serde_json::from_value(playlist.rules.clone().unwrap()).map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?;
+        let tracks = super::smart::tracks(conn, &rules)?;
+        playlist.track_count = tracks.len() as i64;
+        playlist.duration_ms = tracks.iter().map(|t| t.duration_ms).sum();
+        playlist.arts = tracks.iter().filter_map(|t| t.art.clone()).fold(Vec::new(), |mut arts, art| { if arts.len() < 4 && !arts.contains(&art) { arts.push(art); } arts });
+    }
+    Ok(playlists)
 }
 
 pub fn playlists(conn: &Connection) -> rusqlite::Result<Vec<PlaylistRow>> {
@@ -426,6 +437,11 @@ pub struct PlaylistDetail {
 
 pub fn playlist(conn: &Connection, id: i64) -> rusqlite::Result<Option<PlaylistDetail>> {
     let Some(pl) = playlists_where(conn, "WHERE p.id = ?1", [id])?.into_iter().next() else { return Ok(None) };
+    if let Some(value) = &pl.rules {
+        let rules: super::smart::Rules = serde_json::from_value(value.clone()).map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?;
+        let entries = super::smart::tracks(conn, &rules)?.into_iter().map(|track| PlaylistEntry { entry_id: track.id, track }).collect();
+        return Ok(Some(PlaylistDetail { playlist: pl, entries }));
+    }
     let sql = format!("{} JOIN playlist_track pt ON pt.track_id = t.id WHERE pt.playlist_id = ?1 ORDER BY pt.position", TRACK_SELECT.replace("SELECT t.id,", "SELECT pt.id AS entry_id, t.id,"));
     let mut stmt = conn.prepare_cached(&sql)?;
     let rows = stmt.query_map([id], |r| {

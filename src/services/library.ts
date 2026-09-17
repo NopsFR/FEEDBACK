@@ -1,6 +1,6 @@
 import { call } from "./ipc";
 import type {
-  Album, AlbumDetail, Artist, ArtistDetail, Folder, Genre, Home, ImportResult, Lyrics, Overview, Playlist, PlaylistDetail, SearchResult, SmartList, Track,
+  Album, AlbumDetail, Artist, ArtistDetail, Folder, Genre, Home, ImportResult, Lyrics, Overview, Playlist, PlaylistDetail, SearchResult, SmartList, SmartPlaylistRules, Track,
 } from "./types";
 
 /** Data access contract. Desktop uses the Tauri backend; the PWA supplies an HTTP/IndexedDB implementation. */
@@ -28,6 +28,8 @@ export interface LibraryService {
   playlists(): Promise<Playlist[]>;
   playlist(id: number): Promise<PlaylistDetail>;
   createPlaylist(name: string, trackIds?: number[]): Promise<number>;
+  createSmartPlaylist(name: string, rules: SmartPlaylistRules): Promise<number>;
+  setPlaylistRules(id: number, rules: SmartPlaylistRules): Promise<void>;
   renamePlaylist(id: number, name: string, description?: string | null): Promise<void>;
   deletePlaylist(id: number): Promise<void>;
   duplicatePlaylist(id: number): Promise<number>;
@@ -65,6 +67,8 @@ export const tauriLibrary: LibraryService = {
   playlists: () => call("playlists"),
   playlist: (id) => call("playlist_detail", { id }),
   createPlaylist: (name, trackIds) => call("playlist_create", { name, trackIds: trackIds ?? null }),
+  createSmartPlaylist: (name, rules) => call("playlist_create_smart", { name, rules }),
+  setPlaylistRules: (id, rules) => call("playlist_set_rules", { id, rules }),
   renamePlaylist: (id, name, description) => call("playlist_rename", { id, name, description: description ?? null }),
   deletePlaylist: (id) => call("playlist_delete", { id }),
   duplicatePlaylist: (id) => call("playlist_duplicate", { id }),

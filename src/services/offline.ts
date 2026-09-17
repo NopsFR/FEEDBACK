@@ -302,7 +302,7 @@ export async function playlist(id: number): Promise<PlaylistDetail> {
   const p = catalog.savedPlaylists.find((x) => x.id === id);
   if (!p) throw new Error("That playlist isn't saved on this phone.");
   const ts = p.trackIds.map((tid) => catalog.tracks[tid]).filter(Boolean);
-  return { playlist: { id, name: p.name, description: null, trackCount: ts.length, durationMs: ts.reduce((s, t) => s + t.durationMs, 0), updatedAt: 0, arts: [] }, entries: ts.map((t, i) => ({ entryId: i + 1, track: t })) };
+  return { playlist: { id, name: p.name, description: null, trackCount: ts.length, durationMs: ts.reduce((s, t) => s + t.durationMs, 0), updatedAt: 0, arts: [], rules: null }, entries: ts.map((t, i) => ({ entryId: i + 1, track: t })) };
 }
 export async function search(q: string): Promise<SearchResult> {
   const needle = q.toLowerCase();

@@ -12,6 +12,7 @@ import { toastError } from "@/state/ui";
 import type { Playlist } from "@/services/types";
 import { Page, PageHead } from "@/features/library/Page";
 import { playlistMenu } from "./actions";
+import { editSmartPlaylist } from "./SmartPlaylistEditor";
 import s from "./Playlists.module.css";
 
 /** Four-up collage like a mixtape insert. Falls back to a printed blank. */
@@ -47,7 +48,7 @@ export function Playlists() {
   }, []);
   return (
     <Page>
-      <PageHead label="Kept" title="Playlists" meta={plural(playlists.length, "playlist")} actions={<Button icon="plus" onClick={createPlaylistFlow}>New playlist</Button>} />
+      <PageHead label="Kept" title="Playlists" meta={plural(playlists.length, "playlist")} actions={<><Button variant="secondary" icon="playlist" onClick={() => editSmartPlaylist()}>New smart playlist</Button><Button icon="plus" onClick={createPlaylistFlow}>New playlist</Button></>} />
       {playlists.length ? (
         <div className={s.grid}>
           {playlists.map((p) => (
@@ -55,7 +56,7 @@ export function Playlists() {
               <Collage p={p} className={s.art} />
               <span className={`truncate ${s.name}`}>{p.name}</span>
               <span className={`mono ${s.meta}`}>
-                {plural(p.trackCount, "track")} · {longDuration(p.durationMs)} · {relativeDay(p.updatedAt)}
+                {p.rules ? "Smart · " : ""}{plural(p.trackCount, "track")} · {longDuration(p.durationMs)} · {relativeDay(p.updatedAt)}
               </span>
             </button>
           ))}

@@ -27,7 +27,7 @@ export async function toggleFavourite(t: Track, on?: boolean) {
 }
 
 export function playlistSubmenu(source: Track[] | (() => Promise<Track[]>)): MenuItem[] {
-  const pls = useLibrary.getState().playlists;
+  const pls = useLibrary.getState().playlists.filter((p) => !p.rules);
   const resolve = async () => (typeof source === "function" ? source() : source);
   return [
     {

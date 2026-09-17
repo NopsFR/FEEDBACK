@@ -7,6 +7,7 @@ import { useNav, type Route } from "@/state/nav";
 import { toast, toastError, useUi } from "@/state/ui";
 import { library } from "@/services/library";
 import { playlistMenu } from "@/features/playlists/actions";
+import { editSmartPlaylist } from "@/features/playlists/SmartPlaylistEditor";
 import s from "./Shelf.module.css";
 
 interface Item {
@@ -126,6 +127,7 @@ export function Shelf() {
                   onClick={() => go({ name: "playlist", id: p.id })}
                   onContextMenu={(e) => openMenuAt(e, playlistMenu(p))}
                   onDragOver={(e) => {
+                    if (p.rules) return;
                     if (e.dataTransfer.types.includes("application/x-feedback-tracks")) {
                       e.preventDefault();
                       e.dataTransfer.dropEffect = "copy";
@@ -136,10 +138,11 @@ export function Shelf() {
                   onDrop={(e) => onDrop(e, p.id, p.name)}
                 >
                   <span className="truncate">{p.name}</span>
-                  <span className={s.count}>{p.trackCount}</span>
+                  <span className={s.count}>{p.rules ? "AUTO" : p.trackCount}</span>
                 </button>
               );
             })}
+          {!collapsed && <button className={s.emptyPl} onClick={() => editSmartPlaylist()}><Icon name="playlist" size={14} /> New smart playlist</button>}
           {!collapsed && !playlists.length && (
             <button className={s.emptyPl} onClick={create}>
               Make your first playlist

@@ -68,6 +68,8 @@ export const remoteLibrary: LibraryService = {
   playlists: withOffline(() => api("/api/playlists"), async () => []),
   playlist: withOffline((id) => api(`/api/playlist/${id}`), offline.playlist),
   createPlaylist: unsupported("Creating playlists"),
+  createSmartPlaylist: unsupported("Creating smart playlists"),
+  setPlaylistRules: unsupported("Editing smart playlists"),
   renamePlaylist: unsupported("Renaming playlists"),
   deletePlaylist: unsupported("Deleting playlists"),
   duplicatePlaylist: unsupported("Duplicating playlists"),

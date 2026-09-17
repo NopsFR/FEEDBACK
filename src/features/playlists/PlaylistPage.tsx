@@ -16,6 +16,7 @@ import { Loading, Page } from "@/features/library/Page";
 import { TrackList } from "@/features/library/TrackList";
 import { Collage } from "./Playlists";
 import { playlistMenu, renamePlaylist } from "./actions";
+import { editSmartPlaylist } from "./SmartPlaylistEditor";
 import s from "./PlaylistPage.module.css";
 import ts from "@/features/library/Tracks.module.css";
 
@@ -44,7 +45,7 @@ export function PlaylistPage({ id }: { id: number }) {
   if (error) return <Page><EmptyState compact title="Playlist not found" body={error} action={<Button onClick={() => go({ name: "playlists" })}>All playlists</Button>} /></Page>;
   if (!data) return <Loading />;
   const p = data.playlist;
-  const canReorder = sort === "custom" && !filter.trim();
+  const canReorder = !p.rules && sort === "custom" && !filter.trim();
 
   const reorder = async (entryIds: number[]) => {
     try {
@@ -60,7 +61,7 @@ export function PlaylistPage({ id }: { id: number }) {
       <header className={s.head}>
         <Collage p={p} className={s.art} />
         <div className={s.text}>
-          <div className="label">Playlist</div>
+          <div className="label">{p.rules ? "Smart playlist" : "Playlist"}</div>
           <button className={s.title} onClick={() => renamePlaylist(p).then(reload)} title="Rename">
             {p.name}
             <Icon name="edit" size={18} className={s.editIcon} />
@@ -75,6 +76,7 @@ export function PlaylistPage({ id }: { id: number }) {
             <Button icon="shuffle" variant="secondary" disabled={!view.tracks.length} onClick={() => usePlayer.getState().playTracks(view.tracks, Math.floor(Math.random() * view.tracks.length), { source: `playlist:${id}`, shuffle: true })}>
               Shuffle
             </Button>
+            {p.rules && <Button variant="secondary" icon="edit" onClick={() => editSmartPlaylist(p)}>Edit rules</Button>}
             <IconButton
               icon="more"
               label="Playlist options"
@@ -96,20 +98,20 @@ export function PlaylistPage({ id }: { id: number }) {
             value={sort}
             onChange={setSort}
             options={[
-              { value: "custom", label: "Custom" },
+              ...(!p.rules ? [{ value: "custom" as const, label: "Custom" }] : []),
               { value: "title", label: "Title" },
               { value: "artist", label: "Artist" },
               { value: "album", label: "Album" },
             ]}
           />
-          {!canReorder && <span className={`mono ${s.note}`}>Switch to Custom order to drag tracks</span>}
+          {!p.rules && !canReorder && <span className={`mono ${s.note}`}>Switch to Custom order to drag tracks</span>}
         </div>
       )}
 
       <TrackList
         tracks={view.tracks}
         entryIds={view.entryIds}
-        playlistId={id}
+        playlistId={p.rules ? undefined : id}
         columns={["index", "art", "title", "album", "duration", "fav"]}
         source={`playlist:${id}`}
         onReorder={canReorder ? reorder : undefined}
@@ -117,7 +119,7 @@ export function PlaylistPage({ id }: { id: number }) {
           reload();
           void useLibrary.getState().loadPlaylists();
         }}
-        empty={<EmptyState compact title="Empty playlist" body="Right-click tracks anywhere and choose “Add to playlist”, or drag them onto this playlist in the shelf." />}
+        empty={<EmptyState compact title="Empty playlist" body={p.rules ? "No tracks match these rules yet." : "Right-click tracks anywhere and choose “Add to playlist”, or drag them onto this playlist in the shelf."} />}
       />
     </Page>
   );

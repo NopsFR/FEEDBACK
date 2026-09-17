@@ -6,6 +6,7 @@ import type { Playlist } from "@/services/types";
 import { useLibrary } from "@/state/library";
 import { useNav } from "@/state/nav";
 import { toast, toastError, type MenuItem } from "@/state/ui";
+import { editSmartPlaylist } from "./SmartPlaylistEditor";
 
 const I = (n: Parameters<typeof Icon>[0]["name"]) => <Icon name={n} size={16} />;
 
@@ -55,6 +56,7 @@ export function playlistMenu(p: Playlist): MenuItem[] {
     },
     { label: "", separator: true },
     { label: "Rename…", icon: I("edit"), run: () => renamePlaylist(p) },
+    ...(p.rules ? [{ label: "Edit rules…", icon: I("settings"), run: () => editSmartPlaylist(p) } as MenuItem] : []),
     {
       label: "Duplicate",
       icon: I("duplicate"),

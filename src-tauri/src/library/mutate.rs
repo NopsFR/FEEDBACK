@@ -75,6 +75,26 @@ pub fn create_playlist(conn: &Connection, name: &str) -> rusqlite::Result<i64> {
     Ok(conn.last_insert_rowid())
 }
 
+pub fn create_smart_playlist(conn: &Connection, name: &str, rules: &serde_json::Value) -> rusqlite::Result<i64> {
+    let now = now_ms();
+    conn.execute("INSERT INTO playlist(name, rules, created_at, updated_at) VALUES (?1, ?2, ?3, ?3)", params![name.trim(), rules.to_string(), now])?;
+    Ok(conn.last_insert_rowid())
+}
+
+pub fn set_playlist_rules(conn: &Connection, id: i64, rules: &serde_json::Value) -> rusqlite::Result<()> {
+    conn.execute("UPDATE playlist SET rules = ?2, updated_at = ?3 WHERE id = ?1", params![id, rules.to_string(), now_ms()])?;
+    Ok(())
+}
+
+pub fn is_smart_playlist(conn: &Connection, id: i64) -> rusqlite::Result<bool> {
+    conn.query_row("SELECT rules IS NOT NULL FROM playlist WHERE id = ?1", [id], |r| r.get(0))
+}
+
+fn ensure_regular_playlist(conn: &Connection, id: i64) -> rusqlite::Result<()> {
+    if is_smart_playlist(conn, id)? { return Err(rusqlite::Error::InvalidParameterName("Smart playlists are changed by editing their rules.".into())); }
+    Ok(())
+}
+
 pub fn rename_playlist(conn: &Connection, id: i64, name: &str, description: Option<&str>) -> rusqlite::Result<()> {
     conn.execute("UPDATE playlist SET name = ?2, description = ?3, updated_at = ?4 WHERE id = ?1", params![id, name.trim(), description, now_ms()])?;
     Ok(())
@@ -89,7 +109,7 @@ pub fn duplicate_playlist(conn: &mut Connection, id: i64) -> rusqlite::Result<i6
     let tx = conn.transaction()?;
     let name: String = tx.query_row("SELECT name FROM playlist WHERE id = ?1", [id], |r| r.get(0))?;
     let now = now_ms();
-    tx.execute("INSERT INTO playlist(name, description, created_at, updated_at) SELECT ?2, description, ?3, ?3 FROM playlist WHERE id = ?1", params![id, format!("{name} (copy)"), now])?;
+    tx.execute("INSERT INTO playlist(name, description, rules, created_at, updated_at) SELECT ?2, description, rules, ?3, ?3 FROM playlist WHERE id = ?1", params![id, format!("{name} (copy)"), now])?;
     let new_id = tx.last_insert_rowid();
     tx.execute("INSERT INTO playlist_track(playlist_id, track_id, position, added_at) SELECT ?2, track_id, position, ?3 FROM playlist_track WHERE playlist_id = ?1", params![id, new_id, now])?;
     tx.commit()?;
@@ -97,6 +117,7 @@ pub fn duplicate_playlist(conn: &mut Connection, id: i64) -> rusqlite::Result<i6
 }
 
 pub fn add_to_playlist(conn: &mut Connection, id: i64, track_ids: &[i64]) -> rusqlite::Result<usize> {
+    ensure_regular_playlist(conn, id)?;
     let tx = conn.transaction()?;
     let mut pos: f64 = tx.query_row("SELECT COALESCE(MAX(position), 0) FROM playlist_track WHERE playlist_id = ?1", [id], |r| r.get(0))?;
     let now = now_ms();
@@ -110,6 +131,7 @@ pub fn add_to_playlist(conn: &mut Connection, id: i64, track_ids: &[i64]) -> rus
 }
 
 pub fn remove_from_playlist(conn: &mut Connection, id: i64, entry_ids: &[i64]) -> rusqlite::Result<()> {
+    ensure_regular_playlist(conn, id)?;
     let tx = conn.transaction()?;
     for e in entry_ids {
         tx.execute("DELETE FROM playlist_track WHERE id = ?1 AND playlist_id = ?2", params![e, id])?;
@@ -120,6 +142,7 @@ pub fn remove_from_playlist(conn: &mut Connection, id: i64, entry_ids: &[i64]) -
 
 /// Rewrite positions to match the given entry order (entries not listed keep their relative order at the end).
 pub fn reorder_playlist(conn: &mut Connection, id: i64, ordered_entry_ids: &[i64]) -> rusqlite::Result<()> {
+    ensure_regular_playlist(conn, id)?;
     let tx = conn.transaction()?;
     let mut all: Vec<i64> = {
         let mut stmt = tx.prepare("SELECT id FROM playlist_track WHERE playlist_id = ?1 ORDER BY position")?;

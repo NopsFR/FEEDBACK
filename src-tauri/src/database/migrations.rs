@@ -131,6 +131,10 @@ const MIGRATIONS: &[&str] = &[
         revoked INTEGER NOT NULL DEFAULT 0
     );
     "#,
+    // 4 — rule-based smart playlists; NULL keeps the existing manual behaviour
+    r#"
+    ALTER TABLE playlist ADD COLUMN rules TEXT;
+    "#,
 ];
 
 pub fn run(conn: &mut Connection) -> rusqlite::Result<()> {

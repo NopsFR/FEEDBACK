@@ -102,6 +102,8 @@ pub fn run() {
             commands::playlists,
             commands::playlist_detail,
             commands::playlist_create,
+            commands::playlist_create_smart,
+            commands::playlist_set_rules,
             commands::playlist_rename,
             commands::playlist_delete,
             commands::playlist_duplicate,

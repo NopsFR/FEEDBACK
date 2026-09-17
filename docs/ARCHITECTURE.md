@@ -58,8 +58,12 @@ Restore on launch loads the queue paused unless "Resume on launch" is on.
 
 ## Data
 SQLite in the app data dir (`%APPDATA%\app.feedback.player\feedback.db` on Windows). Migrations in
-`database/migrations.rs` (append-only, `PRAGMA user_version`). WAL mode. Tables: `library_folder, artist, album, track,
+`database/migrations.rs` (append-only, `PRAGMA user_version`, currently v4). WAL mode. Tables: `library_folder, artist, album, track,
 artwork, play_stats, play_history, favourite, playlist, playlist_track, setting, track_fts`.
+
+Smart playlists store validated JSON rules in `playlist.rules`. `library/smart.rs` compiles a fixed whitelist of fields,
+operators and sort orders into SQL; user values are always bound parameters. Their entries and summary artwork/counts are
+computed from the current library, while a `NULL` rules value keeps the manual playlist behaviour.
 
 ## Services abstraction
 `src/services/library.ts` defines `LibraryService`. Desktop uses `tauriLibrary`. The PWA will provide an implementation

@@ -271,6 +271,25 @@ pub async fn playlist_create(state: S<'_>, name: String, track_ids: Option<Vec<i
 }
 
 #[tauri::command]
+pub async fn playlist_create_smart(state: S<'_>, name: String, rules: serde_json::Value) -> AppResult<i64> {
+    let name = if name.trim().is_empty() { "Untitled smart playlist".to_string() } else { name };
+    let parsed: crate::library::smart::Rules = serde_json::from_value(rules.clone()).map_err(|_| AppError::User("Those smart-playlist rules aren't valid.".into()))?;
+    crate::library::smart::compile(&parsed).map_err(AppError::User)?;
+    Ok(state.db.with(|c| mutate::create_smart_playlist(c, &name, &rules))?)
+}
+
+#[tauri::command]
+pub async fn playlist_set_rules(state: S<'_>, id: i64, rules: serde_json::Value) -> AppResult<()> {
+    let parsed: crate::library::smart::Rules = serde_json::from_value(rules.clone()).map_err(|_| AppError::User("Those smart-playlist rules aren't valid.".into()))?;
+    crate::library::smart::compile(&parsed).map_err(AppError::User)?;
+    Ok(state.db.with(|c| mutate::set_playlist_rules(c, id, &rules))?)
+}
+
+fn reject_smart_playlist(state: &S<'_>, id: i64) -> AppResult<()> {
+    if state.db.with(|c| mutate::is_smart_playlist(c, id))? { Err(AppError::User("Smart playlists update from their rules. Edit the rules instead.".into())) } else { Ok(()) }
+}
+
+#[tauri::command]
 pub async fn playlist_rename(state: S<'_>, id: i64, name: String, description: Option<String>) -> AppResult<()> {
     if name.trim().is_empty() {
         return Err(AppError::User("A playlist needs a name.".into()));
@@ -290,16 +309,19 @@ pub async fn playlist_duplicate(state: S<'_>, id: i64) -> AppResult<i64> {
 
 #[tauri::command]
 pub async fn playlist_add(state: S<'_>, id: i64, track_ids: Vec<i64>) -> AppResult<usize> {
+    reject_smart_playlist(&state, id)?;
     Ok(state.db.with_mut(|c| mutate::add_to_playlist(c, id, &track_ids))?)
 }
 
 #[tauri::command]
 pub async fn playlist_remove(state: S<'_>, id: i64, entry_ids: Vec<i64>) -> AppResult<()> {
+    reject_smart_playlist(&state, id)?;
     Ok(state.db.with_mut(|c| mutate::remove_from_playlist(c, id, &entry_ids))?)
 }
 
 #[tauri::command]
 pub async fn playlist_reorder(state: S<'_>, id: i64, entry_ids: Vec<i64>) -> AppResult<()> {
+    reject_smart_playlist(&state, id)?;
     Ok(state.db.with_mut(|c| mutate::reorder_playlist(c, id, &entry_ids))?)
 }
 

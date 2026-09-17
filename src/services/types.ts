@@ -95,7 +95,13 @@ export interface Playlist {
   durationMs: number;
   updatedAt: number;
   arts: string[];
+  rules: SmartPlaylistRules | null;
 }
+
+export type SmartPlaylistField = "genre" | "artist" | "album" | "year" | "plays" | "added" | "lastPlayed" | "favourite" | "codec" | "duration";
+export type SmartPlaylistSort = "added_desc" | "plays_desc" | "last_played_desc" | "year_desc" | "title" | "artist" | "random";
+export interface SmartPlaylistCondition { field: SmartPlaylistField; op: string; value: string | number | boolean | null }
+export interface SmartPlaylistRules { match: "all" | "any"; conditions: SmartPlaylistCondition[]; sort: SmartPlaylistSort; limit: number | null }
 
 export interface PlaylistDetail {
   playlist: Playlist;
