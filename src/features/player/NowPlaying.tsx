@@ -113,7 +113,7 @@ export function NowPlaying() {
   if (!open || !current) return null;
   const fav = favOverrides[current.id] ?? (favs.has(current.id) || current.favourite);
   const upNext = queue.items.slice(queue.index + 1, queue.index + 30);
-  const source = queue.source?.startsWith("album:") ? "Album" : queue.source?.startsWith("playlist:") ? "Playlist" : null;
+  const source = queue.source?.startsWith("album:") ? "Album" : queue.source?.startsWith("playlist:") ? "Playlist" : queue.source?.startsWith("radio:") ? "Run" : null;
   const bg = artUrl(current.art, 160);
 
   return (

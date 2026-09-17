@@ -72,6 +72,11 @@ version; a conflict produces a separate phone copy. Conflicting deletes stay pen
 queued order when reconnecting. Audio remains in the opt-in offline store. Browsed track metadata persisted alongside
 edits is bounded; storage failures leave the previous saved state intact and surface an error.
 
+`library/query.rs::radio` builds a listening run around a seed track: the scoring favours the same artist, genre and
+era, gives favourites a nudge, pushes down the seed's own album and anything played in the last day, and adds a random
+term so two runs differ. The result is thinned to two tracks per album and a few per artist, relaxing those caps only
+when a small library can't fill the run. It is one SQL query plus a pass in Rust — nothing external picks the music.
+
 Catalogue lookups (`metadata/lookup.rs`) are opt-in and off by default (`settings.onlineLookups`, checked in Rust, not
 just in the UI). "Find artwork online…" sends one album's title and artist to MusicBrainz, then fetches the matching
 sleeve from the Cover Art Archive; requests carry an identifying user agent and are throttled to one per second. These

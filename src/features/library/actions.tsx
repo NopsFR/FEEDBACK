@@ -65,6 +65,18 @@ export function playlistSubmenu(source: Track[] | (() => Promise<Track[]>)): Men
   ];
 }
 
+/** Build a listening run around a track, from the library itself — nothing phones home to pick it. */
+export async function startRadio(seed: Track) {
+  try {
+    const rest = await library.radio(seed.id, 50);
+    if (!rest.length) return toast("There isn't enough in the library yet to build a run.");
+    usePlayer.getState().playTracks([seed, ...rest], 0, { source: `radio:${seed.id}`, shuffle: false });
+    toast(`Run started from “${seed.title}”.`);
+  } catch (e) {
+    toastError(e);
+  }
+}
+
 export function trackMenu(tracks: Track[], opts: { playlistId?: number; entryIds?: number[]; onRemoved?: () => void; queueContext?: Track[] } = {}): MenuItem[] {
   const p = usePlayer.getState();
   const nav = useNav.getState();
@@ -73,6 +85,7 @@ export function trackMenu(tracks: Track[], opts: { playlistId?: number; entryIds
   const items: MenuItem[] = [
     { label: tracks.length > 1 ? `Play ${tracks.length} tracks` : "Play", icon: I("play"), run: () => p.playTracks(tracks, 0) },
     { label: "Play next", icon: I("queue"), run: () => p.playNext(tracks) },
+    ...(one ? [{ label: "Start a run from here", icon: I("shuffle"), run: () => startRadio(one) } as MenuItem] : []),
     { label: "Add to queue", icon: I("plus"), run: () => p.addToQueue(tracks) },
     { label: "Add to playlist", icon: I("playlist"), submenu: playlistSubmenu(tracks) },
     { label: "", separator: true },
@@ -184,6 +197,7 @@ export function albumMenu(album: Album): MenuItem[] {
     { label: "Shuffle", icon: I("shuffle"), run: () => playAlbum(album, { shuffle: true }) },
     { label: "Play next", icon: I("queue"), run: withTracks((t) => usePlayer.getState().playNext(t)) },
     { label: "Add to queue", icon: I("plus"), run: withTracks((t) => usePlayer.getState().addToQueue(t)) },
+    { label: "Start a run from this album", icon: I("shuffle"), run: withTracks((t) => { if (t[0]) void startRadio(t[0]); }) },
     { label: "Add to playlist", icon: I("playlist"), submenu: playlistSubmenu(async () => (await library.album(album.id)).tracks) },
     { label: "", separator: true },
     ...(album.artistId ? [{ label: `Go to ${album.artist}`, icon: I("artists"), run: () => nav.go({ name: "artist", id: album.artistId! }) }] : []),

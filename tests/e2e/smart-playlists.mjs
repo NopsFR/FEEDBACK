@@ -60,5 +60,11 @@ await page.evaluate(() => window.__feedback.player.getState().next());
 await page.waitForTimeout(2000);
 await page.screenshot({ path: ".sync/qa-smart/disc-next.png" });
 await page.evaluate(() => { window.__feedback.ui.getState().setNowPlaying(false); window.__feedback.player.getState().pause?.(); });
+// Leave the library as we found it.
+await page.evaluate(async () => {
+  const lib = window.__feedback.library;
+  for (const p of await lib.playlists()) if (p.name === "QA smart list") await lib.deletePlaylist(p.id);
+  await window.__feedback.lib.getState().loadPlaylists();
+});
 console.log(errors.length ? `ERRORS: ${errors.join(" | ")}` : "no page errors");
 await browser.close();

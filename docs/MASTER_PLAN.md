@@ -29,6 +29,7 @@
 - [x] PWA offline shell survives releases: the service worker caches the entry scripts on install, refreshes them from each navigation and retires only the assets the previous build referenced
 - [x] Find artwork online: opt-in MusicBrainz release match plus Cover Art Archive sleeves, rate-limited and metadata-only, applied to FEEDBACK's artwork cache without touching the files (live service check runs with `cargo test -- --ignored`)
 - [x] Queue keeps: save the current queue as a playlist; keyboard map available with Ctrl / and from About
+- [x] Runs: "Start a run from here" builds a listening run from the local library (artist, genre, era and favourites, thinned so no album takes over), on desktop and phone
 
 ## Open
 - [~] iPhone: test on a real device (certificate trust, Home Screen install, lock-screen playback) — see MOBILE.md checklist

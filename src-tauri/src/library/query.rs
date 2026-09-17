@@ -480,6 +480,107 @@ pub fn recently_added_tracks(conn: &Connection, limit: i64) -> rusqlite::Result<
     tracks_where(conn, "WHERE t.missing = 0 AND t.kind = 'audio' ORDER BY t.added_at DESC LIMIT ?1", [limit])
 }
 
+/// A listening run built from the library itself: the seed's artist and neighbours, weighted, then thinned
+/// so no one album or artist takes over. Entirely local — no service decides what plays here.
+pub fn radio(conn: &Connection, seed_id: i64, limit: i64) -> rusqlite::Result<Vec<TrackRow>> {
+    let sql = format!(
+        "{TRACK_SELECT}
+         JOIN track seed ON seed.id = ?1
+         WHERE t.missing = 0 AND t.kind = 'audio' AND t.id <> seed.id
+         ORDER BY (
+             (CASE WHEN t.artist_id IS NOT NULL AND t.artist_id = seed.artist_id THEN 900 ELSE 0 END)
+           + (CASE WHEN t.genre IS NOT NULL AND lower(t.genre) = lower(COALESCE(seed.genre,'')) THEN 700 ELSE 0 END)
+           + (CASE WHEN t.year IS NOT NULL AND seed.year IS NOT NULL AND abs(t.year - seed.year) <= 5 THEN 350 ELSE 0 END)
+           + (CASE WHEN fav.track_id IS NOT NULL THEN 250 ELSE 0 END)
+           + (CASE WHEN t.album_id = seed.album_id THEN -400 ELSE 0 END)
+           + (CASE WHEN st.last_played_at IS NOT NULL AND st.last_played_at > CAST(strftime('%s','now') AS INTEGER) * 1000 - 86400000 THEN -600 ELSE 0 END)
+           + abs(random() % 500)
+         ) DESC
+         LIMIT ?2"
+    );
+    let mut stmt = conn.prepare_cached(&sql)?;
+    let rows = stmt.query_map(rusqlite::params![seed_id, limit.clamp(1, 200) * 6], track_from_row)?;
+    let pool = rows.collect::<rusqlite::Result<Vec<_>>>()?;
+
+    let seed_artist = conn.query_row("SELECT artist_id FROM track WHERE id = ?1", [seed_id], |r| r.get::<_, Option<i64>>(0)).optional()?.flatten();
+    let mut picked: Vec<TrackRow> = Vec::new();
+    let mut spare: Vec<TrackRow> = Vec::new();
+    let (mut per_album, mut per_artist) = (std::collections::HashMap::new(), std::collections::HashMap::new());
+    for track in pool {
+        if picked.len() as i64 >= limit {
+            break;
+        }
+        let album_count = *per_album.get(&track.album_id).unwrap_or(&0);
+        let artist_cap = if track.artist_id.is_some() && track.artist_id == seed_artist { 5 } else { 3 };
+        let artist_count = *per_artist.get(&track.artist_id).unwrap_or(&0);
+        if album_count >= 2 || artist_count >= artist_cap {
+            spare.push(track);
+            continue;
+        }
+        per_album.insert(track.album_id, album_count + 1);
+        per_artist.insert(track.artist_id, artist_count + 1);
+        picked.push(track);
+    }
+    // A small library can't fill a varied run; rather than stopping short, relax the caps in order.
+    for track in spare {
+        if picked.len() as i64 >= limit {
+            break;
+        }
+        picked.push(track);
+    }
+    Ok(picked)
+}
+
+#[cfg(test)]
+mod radio_tests {
+    use crate::library::store::{upsert_track, FileFacts};
+    use crate::metadata::tags::{MediaKind, TrackMeta};
+
+    #[test]
+    fn radio_favours_neighbours_without_letting_one_album_take_over() {
+        let db = crate::database::Db::open_in_memory().unwrap();
+        db.with_mut(|c| {
+            c.execute("INSERT INTO library_folder(path, added_at) VALUES ('/music', 0)", [])?;
+            let tx = c.transaction()?;
+            for i in 0..60u32 {
+                let artist = format!("Artist {}", i % 6);
+                let album = format!("Album {}", i % 12);
+                let path = format!("/music/{artist}/{album}/{i:03}.flac");
+                let meta = TrackMeta {
+                    title: Some(format!("Track {i}")),
+                    artist: Some(artist.clone()),
+                    album: Some(album),
+                    year: Some(2000 + (i % 20) as i32),
+                    genre: Some(["Emo", "Metal", "Indie"][(i % 3) as usize].into()),
+                    duration_ms: 180_000,
+                    ..Default::default()
+                };
+                let facts = FileFacts { folder_id: 1, path: &path, filename: "x.flac", size: 1, mtime: 1, kind: MediaKind::Audio, artwork_hash: None, has_lyrics: false, dir_album: None, dir_artist: None, file_title: "x".into(), file_track_no: None };
+                upsert_track(&tx, &facts, &meta)?;
+            }
+            tx.commit()
+        })
+        .unwrap();
+        db.with(|c| {
+            let seed: i64 = c.query_row("SELECT id FROM track LIMIT 1", [], |r| r.get(0))?;
+            let run = super::radio(c, seed, 12)?;
+            assert_eq!(run.len(), 12);
+            assert!(run.iter().all(|t| t.id != seed), "the seed itself never repeats");
+            let mut per_album = std::collections::HashMap::new();
+            for track in &run {
+                *per_album.entry(track.album_id).or_insert(0) += 1;
+            }
+            assert!(per_album.values().all(|n| *n <= 2), "no album may dominate a run the library can fill");
+            // Past what the caps allow, the run still fills rather than stopping short.
+            assert_eq!(super::radio(c, seed, 40)?.len(), 40);
+            let seed_artist: Option<i64> = c.query_row("SELECT artist_id FROM track WHERE id = ?1", [seed], |r| r.get(0))?;
+            assert!(run.iter().any(|t| t.artist_id == seed_artist), "the seed's own artist should appear");
+            Ok(())
+        })
+        .unwrap();
+    }
+}
+
 #[cfg(test)]
 mod perf {
     use crate::library::store::{upsert_track, FileFacts};

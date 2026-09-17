@@ -490,6 +490,16 @@ pub async fn set_album_art(app: AppHandle, state: S<'_>, album_id: i64, image_pa
     Ok(Some(hash))
 }
 
+/// A run of tracks built from the local library around one seed track.
+#[tauri::command]
+pub async fn radio(state: S<'_>, track_id: i64, limit: Option<i64>) -> AppResult<Vec<query::TrackRow>> {
+    let tracks = state.db.with(|c| query::radio(c, track_id, limit.unwrap_or(50)))?;
+    if tracks.is_empty() {
+        return Err(AppError::User("There isn't enough in the library yet to build a run.".into()));
+    }
+    Ok(tracks)
+}
+
 // ---------- catalogue lookups (opt-in, metadata only) ----------
 
 /// True when the user has switched online lookups on in Settings.

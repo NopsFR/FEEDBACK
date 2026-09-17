@@ -17,6 +17,8 @@ export interface LibraryService {
   search(q: string): Promise<SearchResult>;
   home(): Promise<Home>;
   smart(which: SmartList, limit?: number): Promise<Track[]>;
+  /** A listening run built from the local library around one track. */
+  radio(trackId: number, limit?: number): Promise<Track[]>;
   folders(): Promise<Folder[]>;
   addFolder(path: string): Promise<number>;
   removeFolder(id: number): Promise<void>;
@@ -56,6 +58,7 @@ export const tauriLibrary: LibraryService = {
   search: (q) => call("search", { q }),
   home: () => call("home"),
   smart: (which, limit) => call("smart_list", { which, limit: limit ?? null }),
+  radio: (trackId, limit) => call("radio", { trackId, limit: limit ?? null }),
   folders: () => call("list_folders"),
   addFolder: (path) => call("add_folder", { path }),
   removeFolder: (id) => call("remove_folder", { id }),

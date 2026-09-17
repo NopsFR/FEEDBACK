@@ -56,6 +56,7 @@ export const remoteLibrary: LibraryService = {
   search: withOffline((q) => api(`/api/search?q=${encodeURIComponent(q)}`), offline.search),
   home: withOffline(() => api("/api/home"), offline.home),
   smart: withOffline((which: string) => api<Track[]>(`/api/smart/${which}`), async (which) => which === "favourites" ? phone.favouriteTracks() : [] as Track[]),
+  radio: (trackId: number) => api<Track[]>(`/api/radio/${trackId}`),
   folders: async () => [],
   addFolder: unsupported("Adding folders"),
   removeFolder: unsupported("Removing folders"),

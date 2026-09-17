@@ -83,6 +83,7 @@ pub async fn start(app: AppHandle, port: u16, pwa_dir: Option<PathBuf>) -> Resul
         .route("/api/artist/{id}", get(artist))
         .route("/api/search", get(search))
         .route("/api/smart/{which}", get(smart))
+        .route("/api/radio/{id}", get(radio))
         .route("/api/playlists", get(playlists))
         .route("/api/playlist/{id}", get(playlist))
         .route("/api/lyrics/{id}", get(lyrics))
@@ -189,6 +190,11 @@ macro_rules! guarded {
 
 async fn hello() -> impl IntoResponse {
     Json(serde_json::json!({ "app": "FEEDBACK", "version": env!("CARGO_PKG_VERSION") }))
+}
+
+async fn radio(AxState(ctx): AxState<Ctx>, headers: HeaderMap, Query(q): Query<TokenQuery>, AxPath(id): AxPath<i64>) -> Response {
+    guarded!(ctx, headers, q);
+    json(ctx.app.state::<AppState>().db.with(|c| query::radio(c, id, 50)))
 }
 
 async fn phone_edit(AxState(ctx): AxState<Ctx>, headers: HeaderMap, Query(q): Query<TokenQuery>, Json(edit): Json<super::edits::Edit>) -> Response {
