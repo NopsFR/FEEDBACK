@@ -463,3 +463,53 @@ pub fn most_played(conn: &Connection, limit: i64) -> rusqlite::Result<Vec<TrackR
 pub fn recently_added_tracks(conn: &Connection, limit: i64) -> rusqlite::Result<Vec<TrackRow>> {
     tracks_where(conn, "WHERE t.missing = 0 AND t.kind = 'audio' ORDER BY t.added_at DESC LIMIT ?1", [limit])
 }
+
+#[cfg(test)]
+mod perf {
+    use crate::library::store::{upsert_track, FileFacts};
+    use crate::metadata::tags::{MediaKind, TrackMeta};
+    use std::time::Instant;
+
+    /// 20k tracks / 2k albums: the read models the UI uses must stay interactive.
+    #[test]
+    fn large_library_queries_are_fast() {
+        let db = crate::database::Db::open_in_memory().unwrap();
+        db.with_mut(|c| {
+            c.execute("INSERT INTO library_folder(path, added_at) VALUES ('/music', 0)", [])?;
+            let tx = c.transaction()?;
+            for i in 0..20_000u32 {
+                let artist = format!("Artist {}", i % 400);
+                let album = format!("Album {}", i % 2000);
+                let path = format!("/music/{artist}/{album}/{i:05}.flac");
+                let m = TrackMeta { title: Some(format!("Song number {i}")), artist: Some(artist.clone()), album: Some(album), track_no: Some(i % 10 + 1), year: Some(1990 + (i % 30) as i32), genre: Some(["Emo", "Metal", "Indie", "Post-Hardcore"][(i % 4) as usize].into()), duration_ms: 200_000, ..Default::default() };
+                let f = FileFacts { folder_id: 1, path: &path, filename: "x.flac", size: 1, mtime: 1, kind: MediaKind::Audio, artwork_hash: None, has_lyrics: false, dir_album: None, dir_artist: None, file_title: "x".into(), file_track_no: None };
+                upsert_track(&tx, &f, &m)?;
+            }
+            tx.commit()
+        })
+        .unwrap();
+        db.with(|c| {
+            let t = Instant::now();
+            let tracks = super::all_tracks(c, "audio")?;
+            let t_tracks = t.elapsed();
+            let t = Instant::now();
+            let albums = super::all_albums(c)?;
+            let t_albums = t.elapsed();
+            let t = Instant::now();
+            let artists = super::all_artists(c)?;
+            let t_artists = t.elapsed();
+            let t = Instant::now();
+            let s = super::search(c, "song 1999")?;
+            let t_search = t.elapsed();
+            let t = Instant::now();
+            let _ = super::home(c)?;
+            let t_home = t.elapsed();
+            eprintln!("tracks {} in {:?}, albums {} in {:?}, artists {} in {:?}, search {} in {:?}, home {:?}", tracks.len(), t_tracks, albums.len(), t_albums, artists.len(), t_artists, s.tracks.len(), t_search, t_home);
+            assert_eq!(tracks.len(), 20_000);
+            assert_eq!(albums.len(), 2000);
+            assert!(t_tracks.as_millis() < 2500 && t_albums.as_millis() < 1500 && t_search.as_millis() < 300, "too slow");
+            Ok(())
+        })
+        .unwrap();
+    }
+}

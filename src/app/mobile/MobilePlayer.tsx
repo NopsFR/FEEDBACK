@@ -104,7 +104,7 @@ export function MobilePlayer() {
 
       <div className={s.meta}>
         <div className={s.titles}>
-          <h1 className={`truncate ${s.title}`}>{current.title}</h1>
+          <h1 className={s.title}>{current.title}</h1>
           <p className={`truncate ${s.artist}`}>{current.artist}</p>
         </div>
         <button className={`${s.fav} ${fav ? s.favOn : ""}`} onClick={() => void toggleFavourite(current, !fav)} aria-label="Favourite">

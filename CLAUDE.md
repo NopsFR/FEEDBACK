@@ -21,6 +21,12 @@ Local-first music + music-video player. Tauri 2 (Rust) + React 19 + TypeScript +
 - Copy lines: "Music people repeat." / "Louder things last longer." No startup-speak.
 - Logo sources are generated: `design/generators/brand_v2.py` → `brand/logo/*.svg`; icons: `design/generators/icon_render.py`.
 
+## State (see MASTER_PLAN for detail)
+Working 0.1.0: desktop app, installer, library engine, playback, core UI, Now Playing, playlists, metadata editor,
+downloads, LAN phone server + PWA with offline albums, brand system, renders, marketing, landing page.
+Useful scripts on Windows: `.sync\dev.ps1` (restart dev with CDP), `.sync\cargotest.cmd`, `tests/e2e/drive.mjs`,
+`tests/e2e/pwa.mjs <code>`, `tests/e2e/prod-smoke.mjs`. Blender: `blender -b -P design/blender/build_assets.py`.
+
 ## Code rules
 - One authoritative playback/queue service (`src/features/player/engine`). No fake controls.
 - Frontend talks to data through `src/services/library` interface (Tauri impl now; HTTP/IndexedDB impls for PWA).

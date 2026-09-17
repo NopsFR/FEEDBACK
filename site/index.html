@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FEEDBACK — music people repeat</title>
+<meta name="description" content="A player for the music you own. Local, offline, no account, no ads. Windows app and a phone app that runs from your own computer.">
+<meta property="og:title" content="FEEDBACK">
+<meta property="og:description" content="A player for the music you own.">
+<meta property="og:image" content="assets/og.png">
+<meta name="theme-color" content="#0B0B0B">
+<link rel="icon" href="assets/favicon.svg">
+<style>
+@font-face{font-family:Archivo;src:url(assets/archivo.woff2) format("woff2");font-weight:100 900;font-stretch:62% 125%;font-display:swap}
+@font-face{font-family:Inter;src:url(assets/inter.woff2) format("woff2");font-weight:100 900;font-display:swap}
+@font-face{font-family:Hand;src:url(assets/hand.woff2) format("woff2");font-display:swap}
+:root{--ink:#0b0b0b;--ink0:#050505;--paper:#e6e1d6;--paper2:#a9a49a;--paper3:#6f6c66;--line:#2c2c2c;--red:#ff2a3a;--wine:#8b0f1a}
+*{box-sizing:border-box}html{background:var(--ink0)}body{margin:0;color:var(--paper);font:17px/1.6 Inter,system-ui,sans-serif;background:var(--ink0)}
+img{display:block;max-width:100%}a{color:inherit}
+.label{font-family:Archivo;font-stretch:112%;font-weight:600;font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--paper2)}
+.label i{font-style:normal;font-family:ui-monospace,monospace;letter-spacing:0;color:var(--red);margin-right:12px}
+.display{font-family:Archivo;font-stretch:125%;font-weight:880;text-transform:uppercase;line-height:.9;letter-spacing:-.02em;margin:0}
+.hand{font-family:Hand;color:var(--paper2)}
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+header.hero{position:relative;min-height:92vh;display:flex;align-items:flex-end;overflow:hidden;border-bottom:1px solid var(--line)}
+.hero .bg{position:absolute;inset:0;background:url(assets/hero.jpg) center/cover}
+.hero .bg::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(5,5,5,.8),rgba(5,5,5,.2) 60%),linear-gradient(0deg,var(--ink0) 8%,rgba(5,5,5,.55) 45%,rgba(5,5,5,.25) 70%,rgba(5,5,5,.7))}
+.hero .corner{position:absolute;top:28px;font-family:Archivo;font-stretch:112%;font-weight:560;font-size:12px;letter-spacing:.3em;line-height:1.9}
+.hero .in{position:relative;padding-bottom:9vh;width:100%}
+.hero .mark{width:min(880px,92vw)}
+.hero p.lede{max-width:520px;margin:34px 0 0;font-size:20px;color:var(--paper)}
+.cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:10px;height:48px;padding:0 22px;font-family:Archivo;font-stretch:115%;font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;border-radius:2px}
+.btn.primary{background:var(--paper);color:var(--ink)}.btn.secondary{box-shadow:inset 0 0 0 1px var(--paper3)}
+.note{font-size:26px;transform:rotate(-3deg);margin-left:12px}
+section{padding:110px 0;border-bottom:1px solid var(--line)}
+.head{display:flex;align-items:center;gap:16px;margin-bottom:40px}.head::after{content:"";flex:1;height:1px;background:var(--line)}
+h2.display{font-size:clamp(40px,6vw,88px)}
+.shot{box-shadow:0 40px 100px rgba(0,0,0,.6);border:1px solid #1d1d1d}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+.list{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.list li{display:grid;grid-template-columns:44px 1fr;gap:12px;padding:18px 0;border-bottom:1px solid var(--line)}
+.list li b{font-family:ui-monospace,monospace;color:var(--red);font-weight:500;font-size:13px;padding-top:4px}
+.list li strong{display:block;font-family:Archivo;font-stretch:112%;text-transform:uppercase;letter-spacing:.06em;font-size:15px;margin-bottom:2px}
+.list li span{color:var(--paper2)}
+.phones{display:flex;gap:22px;justify-content:center}
+.phones img{width:230px;border-radius:26px;border:6px solid #141414;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.phones img:nth-child(2){transform:translateY(-34px)}
+.renders{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}.renders img{width:100%;height:100%;object-fit:cover}
+.fine{color:var(--paper3);font-size:14px}
+footer{padding:60px 0 80px}footer .row{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap}
+code{font-family:ui-monospace,monospace;background:#161616;padding:2px 6px;font-size:.9em}
+@media (max-width:860px){.two,.renders{grid-template-columns:1fr}.phones img{width:30vw}.hero .corner{display:none}section{padding:72px 0}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="bg" role="img" aria-label="A FEEDBACK disc and jewel case on a dark stage"></div>
+  <div class="corner" style="left:28px">MUSIC<br>PEOPLE<br>REPEAT</div>
+  <div class="corner" style="right:28px;text-align:right">FOR WINDOWS<br>+ YOUR PHONE<br>FREE</div>
+  <div class="wrap in">
+    <img class="mark" src="assets/wordmark-worn.svg" alt="FEEDBACK">
+    <p class="lede">A player for the music you own. Rips, downloads, bootlegs, videos — kept in your folders, played properly, nothing uploaded.</p>
+    <div class="cta">
+      <a class="btn primary" href="#download">Download for Windows</a>
+      <a class="btn secondary" href="#phone">Phone app</a>
+      <span class="hand note">louder things last longer.</span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="head"><span class="label"><i>01</i>Your library</span></div>
+    <div class="two">
+      <div>
+        <h2 class="display">Point it<br>at the<br>folder.</h2>
+        <p style="color:var(--paper2);max-width:460px;margin-top:26px">FEEDBACK reads the tags and artwork already in your files and builds albums, artists, genres and years. It watches the folder, so new rips just show up. Search is instant because it never leaves your computer.</p>
+      </div>
+      <img class="shot" src="assets/desktop-home.jpg" alt="FEEDBACK home screen" loading="lazy">
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="head"><span class="label"><i>02</i>Now playing</span></div>
+    <img class="shot" src="assets/desktop-nowplaying.jpg" alt="Now playing with synced lyrics" loading="lazy">
+    <ul class="list" style="margin-top:56px">
+      <li><b>01</b><div><strong>Plays what you've got</strong><span>MP3, FLAC, ALAC, AAC, WAV, AIFF, Ogg, Opus. Music videos too.</span></div></li>
+      <li><b>02</b><div><strong>Straight through</strong><span>Gapless playback for live records, optional crossfade, ReplayGain so quiet albums stay quiet.</span></div></li>
+      <li><b>03</b><div><strong>Words on screen</strong><span>Synced lyrics from <code>.lrc</code> files, plain lyrics from <code>.txt</code> or the file's own tags.</span></div></li>
+      <li><b>04</b><div><strong>Ten-band EQ</strong><span>With presets, and a signal line that moves with the music.</span></div></li>
+      <li><b>05</b><div><strong>Fix the tags</strong><span>Edit titles, artists, albums and years. Files are checked before anything is replaced.</span></div></li>
+    </ul>
+  </div>
+</section>
+
+<section id="phone">
+  <div class="wrap two">
+    <div>
+      <div class="label"><i>03</i>On your phone</div>
+      <h2 class="display" style="margin-top:22px">No cloud.<br>Just your<br>Wi-Fi.</h2>
+      <p style="color:var(--paper2);max-width:460px;margin-top:26px">Turn on phone access and your iPhone connects straight to your computer, encrypted, with a code you pair once. Browse everything at home. Save albums to the phone and they play with no signal.</p>
+      <p class="fine">Nothing goes through the internet. Revoke a phone any time.</p>
+    </div>
+    <div class="phones">
+      <img src="assets/mobile-home.jpg" alt="Phone home screen" loading="lazy">
+      <img src="assets/mobile-player.jpg" alt="Phone player" loading="lazy">
+      <img src="assets/mobile-library.jpg" alt="Phone library" loading="lazy">
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="head"><span class="label"><i>04</i>No catch</span></div>
+    <div class="two">
+      <div class="renders"><img src="assets/disc.jpg" alt="FEEDBACK disc render" loading="lazy"><img src="assets/case.jpg" alt="FEEDBACK jewel case render" loading="lazy"></div>
+      <ul class="list">
+        <li><b>—</b><div><strong>No account</strong><span>Open it and play.</span></div></li>
+        <li><b>—</b><div><strong>No ads, no skips limit</strong><span>It's your music.</span></div></li>
+        <li><b>—</b><div><strong>No tracking</strong><span>No telemetry. Your listening history stays on your devices.</span></div></li>
+        <li><b>—</b><div><strong>Works offline</strong><span>Unplug the router. Everything still plays.</span></div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="download">
+  <div class="wrap">
+    <div class="label"><i>05</i>Get it</div>
+    <h2 class="display" style="margin:22px 0 26px">Download</h2>
+    <p style="max-width:620px;color:var(--paper2)">Windows 10 or 11, 64-bit. Run <code>FEEDBACK_0.1.0_x64-setup.exe</code>. The installer isn't code-signed yet, so Windows SmartScreen may say it's from an unknown publisher — choose <em>More info → Run anyway</em>.</p>
+    <p class="fine">FEEDBACK doesn't download, rip or unlock music from streaming services. It plays files you have.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap row">
+    <img src="assets/wordmark.svg" alt="FEEDBACK" style="width:220px">
+    <span class="fine">Screenshots show a generated test library; the bands in them don't exist.</span>
+  </div>
+</footer>
+</body>
+</html>
