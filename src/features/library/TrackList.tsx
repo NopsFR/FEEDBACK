@@ -47,6 +47,7 @@ export function TrackList({ tracks, columns = ["index", "title", "album", "durat
   const currentId = usePlayer((p) => p.current?.id);
   const playing = usePlayer((p) => p.playing);
   const favs = useLibrary((l) => l.favourites);
+  const favOverrides = useLibrary((l) => l.favouriteOverrides);
 
   // Rows: optionally interleave disc headers
   const rows = useMemo(() => {
@@ -185,8 +186,10 @@ export function TrackList({ tracks, columns = ["index", "title", "album", "durat
   const W: Record<Column, string> = { index: "44px", art: "40px", title: "minmax(180px, 1.6fr)", album: "minmax(120px, 1fr)", plays: "56px", added: "110px", duration: "64px", fav: "36px" };
   const cols = columns.map((c) => W[c]).join(" ");
   const narrow = columns.filter((c) => c !== "album" && c !== "added" && c !== "plays").map((c) => W[c]).join(" ");
+  const phoneWidths = { ...W, index: "22px", art: "34px", title: "minmax(0, 1fr)", duration: "44px", fav: "44px" };
+  const phone = columns.filter((c) => c !== "album" && c !== "added" && c !== "plays").map((c) => phoneWidths[c]).join(" ");
   return (
-    <div className={s.list} style={{ ["--cols" as string]: cols, ["--cols-narrow" as string]: narrow }}>
+    <div className={s.list} style={{ ["--cols" as string]: cols, ["--cols-narrow" as string]: narrow, ["--cols-phone" as string]: phone }}>
       <div className={s.header} role="row">
         {columns.includes("index") && <span className={s.idx}>#</span>}
         {columns.includes("art") && <span />}
@@ -236,7 +239,7 @@ export function TrackList({ tracks, columns = ["index", "title", "album", "durat
               selected={selected.has(row.i)}
               current={t.id === currentId}
               playing={playing}
-              fav={favs.has(t.id) || t.favourite}
+              fav={favOverrides[t.id] ?? (favs.has(t.id) || t.favourite)}
               hideArtist={!!albumArtist && t.artist === albumArtist}
               dropBefore={dragOver === row.i}
               dropAfter={dragOver === row.i + 1 && row.i === tracks.length - 1}

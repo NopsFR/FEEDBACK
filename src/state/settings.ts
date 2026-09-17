@@ -15,6 +15,7 @@ export interface Settings {
   eqPreset: string;
   eqBands: number[];
   visualiser: boolean;
+  discMode: boolean;
   ambientArtwork: boolean;
   resumeOnLaunch: boolean;
   reducedMotion: "system" | "on" | "off";
@@ -31,6 +32,7 @@ export const DEFAULT_SETTINGS: Settings = {
   eqPreset: "flat",
   eqBands: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   visualiser: true,
+  discMode: false,
   ambientArtwork: true,
   resumeOnLaunch: false,
   reducedMotion: "system",

@@ -1,0 +1,11 @@
+# One line ending everywhere: the repo is edited from Windows and Linux tooling.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.mp4 binary
+*.webm binary
+*.glb binary
+*.blend binary
+*.ico binary
+*.bmp binary
+*.woff2 binary

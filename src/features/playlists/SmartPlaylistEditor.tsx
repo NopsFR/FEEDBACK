@@ -14,9 +14,10 @@ const FIELDS: { value: SmartPlaylistField; label: string }[] = [
   { value: "lastPlayed", label: "Last played" }, { value: "favourite", label: "Favourite" }, { value: "codec", label: "Codec" },
   { value: "duration", label: "Duration" },
 ];
-const OPS: Record<SmartPlaylistField, { value: string; label: string; valueless?: boolean }[]> = {
+/** Kept in step with the Rust compiler (src-tauri/src/library/smart.rs); tests/unit/smart-ops.test.ts guards it. */
+export const OPS: Record<SmartPlaylistField, { value: string; label: string; valueless?: boolean }[]> = {
   genre: textOps(), artist: textOps(), album: textOps(), codec: [{ value: "is", label: "is" }],
-  year: numberOps("is"), plays: numberOps(), duration: numberOps(), added: [{ value: "within", label: "within the last" }],
+  year: numberOps("is"), plays: numberOps("is exactly"), duration: numberOps().slice(1), added: [{ value: "within", label: "within the last" }],
   lastPlayed: [{ value: "within", label: "within the last" }, { value: "notWithin", label: "not within the last" }, { value: "never", label: "never", valueless: true }],
   favourite: [{ value: "true", label: "is favourite", valueless: true }, { value: "false", label: "is not favourite", valueless: true }],
 };
@@ -42,6 +43,7 @@ function Editor({ playlist, onClose }: { playlist?: Playlist; onClose: () => voi
         useNav.getState().go({ name: "playlist", id });
       }
       await useLibrary.getState().loadPlaylists();
+      useLibrary.getState().invalidate();
       onClose();
     } catch (e) { toastError(e); setBusy(false); }
   };

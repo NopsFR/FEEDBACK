@@ -6,6 +6,7 @@
 import type { Album, AlbumDetail, ArtistDetail, Home, Overview, PlaylistDetail, SearchResult, Track, Artist } from "./types";
 import { getToken, offlineArt, offlineUrls } from "./platform";
 import { log } from "@/lib/log";
+import * as phone from "./phone";
 
 interface Catalog {
   version: 1;
@@ -168,6 +169,7 @@ export function savedBytes() {
 }
 
 export async function saveTracks(tracks: Track[], onProgress?: (done: number, total: number) => void) {
+  phone.cacheTracks(tracks);
   let done = 0;
   for (const t of tracks) {
     if (!catalog.tracks[t.id]) {
@@ -203,6 +205,7 @@ export async function saveAlbum(d: AlbumDetail, onProgress?: (done: number, tota
 }
 
 export async function savePlaylist(d: PlaylistDetail, onProgress?: (done: number, total: number) => void) {
+  phone.cachePlaylist(d);
   const tracks = d.entries.map((e) => e.track);
   await saveTracks(tracks, onProgress);
   catalog.savedPlaylists = catalog.savedPlaylists.filter((p) => p.id !== d.playlist.id);
@@ -253,7 +256,8 @@ async function flushPlays() {
   catalog.pendingPlays = [];
   for (const p of pending) {
     try {
-      await fetch(`/api/play/${p.id}`, { method: "POST", headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" }, body: JSON.stringify({ ms: p.ms, skipped: p.skipped }) });
+      const response = await fetch(`/api/play/${p.id}`, { method: "POST", headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" }, body: JSON.stringify({ ms: p.ms, skipped: p.skipped }) });
+      if (!response.ok) throw new Error("Play not acknowledged");
     } catch {
       catalog.pendingPlays.push(p);
     }

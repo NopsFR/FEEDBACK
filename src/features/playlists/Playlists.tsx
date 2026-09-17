@@ -13,6 +13,7 @@ import type { Playlist } from "@/services/types";
 import { Page, PageHead } from "@/features/library/Page";
 import { playlistMenu } from "./actions";
 import { editSmartPlaylist } from "./SmartPlaylistEditor";
+import { isTauri } from "@/services/platform";
 import s from "./Playlists.module.css";
 
 /** Four-up collage like a mixtape insert. Falls back to a printed blank. */
@@ -48,7 +49,7 @@ export function Playlists() {
   }, []);
   return (
     <Page>
-      <PageHead label="Kept" title="Playlists" meta={plural(playlists.length, "playlist")} actions={<><Button variant="secondary" icon="playlist" onClick={() => editSmartPlaylist()}>New smart playlist</Button><Button icon="plus" onClick={createPlaylistFlow}>New playlist</Button></>} />
+      <PageHead label="Kept" title="Playlists" meta={plural(playlists.length, "playlist")} actions={<>{isTauri && <Button variant="secondary" icon="playlist" onClick={() => editSmartPlaylist()}>New smart playlist</Button>}<Button icon="plus" onClick={createPlaylistFlow}>New playlist</Button></>} />
       {playlists.length ? (
         <div className={s.grid}>
           {playlists.map((p) => (

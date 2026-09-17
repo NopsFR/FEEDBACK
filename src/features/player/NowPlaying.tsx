@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { usePlayer } from "./store";
 import { usePosition } from "./hooks";
 import { useAmbient } from "./ambient";
@@ -20,6 +20,9 @@ import { toggleFavourite, trackMenu } from "@/features/library/actions";
 import s from "./NowPlaying.module.css";
 
 type Tab = "lyrics" | "queue" | "details";
+type DiscProps = { art?: string | null; playing: boolean; reducedMotion: boolean; fallback: ReactNode };
+// Offline phones may not hold the disc chunk: fall back to artwork rather than failing the view.
+const DiscView = lazy<ComponentType<DiscProps>>(() => import("./DiscView").catch(() => ({ default: ({ fallback }: DiscProps) => <>{fallback}</> })));
 
 function BigTimeline() {
   const { pos, dur } = usePosition();
@@ -66,9 +69,19 @@ export function NowPlaying() {
   const sleepAt = usePlayer((p) => p.sleepAt);
   const { toggle, next, prev, toggleShuffle, cycleRepeat, jumpTo } = usePlayer.getState();
   const favs = useLibrary((l) => l.favourites);
+  const favOverrides = useLibrary((l) => l.favouriteOverrides);
   const go = useNav((n) => n.go);
   const showVis = useSettings((st) => st.visualiser);
   const ambientOn = useSettings((st) => st.ambientArtwork);
+  const discMode = useSettings((st) => st.discMode);
+  const motion = useSettings((st) => st.reducedMotion);
+  const [systemReduced, setSystemReduced] = useState(() => matchMedia("(prefers-reduced-motion: reduce)").matches);
+  useEffect(() => {
+    const media = matchMedia("(prefers-reduced-motion: reduce)");
+    const changed = () => setSystemReduced(media.matches);
+    media.addEventListener("change", changed);
+    return () => media.removeEventListener("change", changed);
+  }, []);
   const amb = useAmbient(ambientOn ? current?.art : null);
   const [tab, setTab] = useState<Tab>("lyrics");
   const [artFull, setArtFull] = useState(false);
@@ -98,7 +111,7 @@ export function NowPlaying() {
   }, [current?.id]);
 
   if (!open || !current) return null;
-  const fav = favs.has(current.id) || current.favourite;
+  const fav = favOverrides[current.id] ?? (favs.has(current.id) || current.favourite);
   const upNext = queue.items.slice(queue.index + 1, queue.index + 30);
   const source = queue.source?.startsWith("album:") ? "Album" : queue.source?.startsWith("playlist:") ? "Playlist" : null;
   const bg = artUrl(current.art, 160);
@@ -120,6 +133,7 @@ export function NowPlaying() {
           </button>
         </div>
         <div className={s.topRight}>
+          <button className={s.tab} aria-label="Disc mode" aria-pressed={discMode} onClick={() => useSettings.getState().set("discMode", !discMode)}>{discMode ? "Artwork" : "Disc"}</button>
           <IconButton icon="moon" label={sleepAt ? "Sleep timer on" : "Sleep timer"} active={!!sleepAt} onClick={(e) => openMenuFrom(e.currentTarget, sleepMenu())} />
           <IconButton icon="more" label="More" onClick={(e) => openMenuFrom(e.currentTarget, trackMenu([current]))} />
         </div>
@@ -128,7 +142,9 @@ export function NowPlaying() {
       <div className={s.stage}>
         <section className={s.left}>
           <button className={s.artWrap} onClick={() => setArtFull(true)} aria-label="View full artwork" onContextMenu={(e) => openMenuAt(e, trackMenu([current]))}>
-            <Artwork key={current.id} hash={current.art} size={480} seed={current.album} className={`${s.art} ${playing ? s.artPlaying : ""}`} eager />
+            {discMode ? <Suspense fallback={<Artwork hash={current.art} seed={current.album} className={s.art} />}>
+              <DiscView art={current.art} playing={playing} reducedMotion={motion === "on" || (motion === "system" && systemReduced)} fallback={<Artwork hash={current.art} seed={current.album} className={s.art} />} />
+            </Suspense> : <Artwork key={current.id} hash={current.art} size={480} seed={current.album} className={`${s.art} ${playing ? s.artPlaying : ""}`} eager />}
           </button>
 
           <div className={s.meta}>

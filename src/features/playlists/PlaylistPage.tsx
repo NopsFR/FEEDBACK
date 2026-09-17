@@ -17,6 +17,7 @@ import { TrackList } from "@/features/library/TrackList";
 import { Collage } from "./Playlists";
 import { playlistMenu, renamePlaylist } from "./actions";
 import { editSmartPlaylist } from "./SmartPlaylistEditor";
+import { isTauri } from "@/services/platform";
 import s from "./PlaylistPage.module.css";
 import ts from "@/features/library/Tracks.module.css";
 
@@ -76,7 +77,7 @@ export function PlaylistPage({ id }: { id: number }) {
             <Button icon="shuffle" variant="secondary" disabled={!view.tracks.length} onClick={() => usePlayer.getState().playTracks(view.tracks, Math.floor(Math.random() * view.tracks.length), { source: `playlist:${id}`, shuffle: true })}>
               Shuffle
             </Button>
-            {p.rules && <Button variant="secondary" icon="edit" onClick={() => editSmartPlaylist(p)}>Edit rules</Button>}
+            {p.rules && isTauri && <Button variant="secondary" icon="edit" onClick={() => editSmartPlaylist(p)}>Edit rules</Button>}
             <IconButton
               icon="more"
               label="Playlist options"
@@ -98,7 +99,7 @@ export function PlaylistPage({ id }: { id: number }) {
             value={sort}
             onChange={setSort}
             options={[
-              ...(!p.rules ? [{ value: "custom" as const, label: "Custom" }] : []),
+              { value: "custom", label: p.rules ? "Rules" : "Custom" },
               { value: "title", label: "Title" },
               { value: "artist", label: "Artist" },
               { value: "album", label: "Album" },

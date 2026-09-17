@@ -76,3 +76,24 @@
   transform: rotate(-2deg);
   color: var(--paper-3);
 }
+
+/* Narrow phones: stack the case above the copy so the display type never clips. */
+@media (max-width: 420px) {
+  .wrap {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 22px;
+    padding: 36px 0;
+  }
+  .case,
+  .compact .case {
+    width: 108px;
+  }
+  .copy {
+    max-width: none;
+  }
+  .title {
+    font-size: var(--fs-xl);
+    overflow-wrap: anywhere;
+  }
+}

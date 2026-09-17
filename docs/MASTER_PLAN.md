@@ -23,11 +23,13 @@
 - [x] Layout QA at 980×640 (min window), 1280×720@150%, 1536×864@125%, 2560×1440; content column widens on large displays
 - [x] Startup intro FULL frames checked (carrier line → spikes → misregistered print → tear exit)
 - [x] Rule-based smart playlists (all/any rules across metadata, dates, plays, favourites, codec and duration; safe bound SQL; editable sorting and limits)
+- [x] Phone edits: favourites and manual playlist create/rename/add/remove/reorder/delete persist offline and sync on reconnect; retry receipts prevent duplicates and conflicting playlist edits preserve a phone copy (automated browser and Rust checks; real iPhone check remains open)
+- [x] Now Playing disc mode: existing GLB loaded on demand with the sleeve screen-printed onto the label, pauses with playback, respects reduced motion, and falls back to artwork when WebGL or the chunk is unavailable
+- [x] Phone QA at 320/360/390/430 and landscape: the touch shell now covers short viewports, Now Playing reflows beside the artwork, empty states stop clipping
+- [x] PWA offline shell survives releases: the service worker caches the entry scripts on install, refreshes them from each navigation and retires only the assets the previous build referenced
 
 ## Open
 - [~] iPhone: test on a real device (certificate trust, Home Screen install, lock-screen playback) — see MOBILE.md checklist
-- [ ] Phone: edit playlists/favourites offline and reconcile on reconnect (currently favourites/plays sync; playlists are read-only on phone)
-- [ ] Use the disc GLB in-app (e.g. Now Playing "disc" mode) — assets exist, runtime not integrated
 - [ ] Android build (needs Android SDK/NDK install) and native iOS (needs a Mac) — see IOS.md
 - [ ] Code signing (not available at £0), trademark check before any public release
 - [ ] Wide-format decoding for WavPack/APE (symphonia doesn't support them)

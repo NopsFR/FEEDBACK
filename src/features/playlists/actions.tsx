@@ -7,6 +7,8 @@ import { useLibrary } from "@/state/library";
 import { useNav } from "@/state/nav";
 import { toast, toastError, type MenuItem } from "@/state/ui";
 import { editSmartPlaylist } from "./SmartPlaylistEditor";
+import { isTauri } from "@/services/platform";
+import * as offline from "@/services/offline";
 
 const I = (n: Parameters<typeof Icon>[0]["name"]) => <Icon name={n} size={16} />;
 
@@ -56,7 +58,10 @@ export function playlistMenu(p: Playlist): MenuItem[] {
     },
     { label: "", separator: true },
     { label: "Rename…", icon: I("edit"), run: () => renamePlaylist(p) },
-    ...(p.rules ? [{ label: "Edit rules…", icon: I("settings"), run: () => editSmartPlaylist(p) } as MenuItem] : []),
+    ...(p.rules && isTauri ? [{ label: "Edit rules…", icon: I("settings"), run: () => editSmartPlaylist(p) } as MenuItem] : []),
+    ...(!isTauri ? [{ label: "Save to this phone", icon: I("import"), run: async () => {
+      try { const d = await library.playlist(p.id); if (await confirmAction("Save playlist", `Download ${d.entries.length} tracks from “${p.name}” to this phone?`, "Save")) { await offline.savePlaylist(d); toast("Playlist saved on this phone."); } } catch (e) { toastError(e); }
+    } } as MenuItem] : []),
     {
       label: "Duplicate",
       icon: I("duplicate"),

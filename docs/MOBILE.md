@@ -34,8 +34,19 @@ If your computer's IP changes, the server issues a new leaf certificate automati
 | Browse whole library, search | ✓ | Saved items only |
 | Stream any track | ✓ | — |
 | Play saved albums/playlists | ✓ | ✓ |
-| Favourites / play counts | ✓ | Plays are queued and sent when back on Wi-Fi |
-| Edit playlists, import, tags | On the computer | — |
+| Favourites / play counts | ✓ | Edits/plays are queued and sent when back on Wi-Fi |
+| Edit manual playlists | ✓ | Create, rename, add, remove, reorder and delete previously opened playlists |
+| Smart-playlist rules, import, tags | On the computer | — |
+
+Phone playlist/favourite edits survive reloads. Open a playlist while connected to keep its editable metadata;
+save it explicitly to download its audio. Long-press a track for Move up / Move down. Pending edit count, retry,
+and discard controls are on **On this phone**. If both devices change a playlist, the desktop version is retained
+and phone edits become a separate “phone copy”. A conflicting delete waits for review. Removed desktop tracks are
+skipped with a notice. Favourite edits apply when received by the computer. Pending changes belong to the pairing
+that created them; pairing with a different computer does not send that old queue to the new computer.
+
+Automated tests cover phone-width browser rendering, persistence across reload, reconnect, retry receipts,
+duplicate entries, conflict copies and smart-playlist protection. This does not replace real iPhone testing.
 
 Remote access away from home is deliberately not built in. If you want it, put both devices on a private network you
 control (e.g. WireGuard or Tailscale's free tier) and use the computer's address on that network. Never port-forward the

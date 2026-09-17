@@ -196,3 +196,48 @@
 .switch .on {
   color: var(--red);
 }
+
+/* Phone landscape: artwork beside the controls instead of stacked off-screen. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .sheet {
+    grid-template-columns: minmax(0, 38%) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+    grid-template-areas:
+      "head head"
+      "body meta"
+      "body time"
+      "body controls"
+      "body switch";
+    column-gap: 26px;
+    padding: env(safe-area-inset-top) 20px calc(env(safe-area-inset-bottom) + 6px);
+  }
+  .head {
+    grid-area: head;
+    height: 38px;
+  }
+  .body {
+    grid-area: body;
+  }
+  .meta {
+    grid-area: meta;
+  }
+  .time {
+    grid-area: time;
+  }
+  .controls {
+    grid-area: controls;
+  }
+  .switch {
+    grid-area: switch;
+  }
+  .art {
+    width: min(100%, 52vh);
+  }
+  .play {
+    width: 56px;
+    height: 56px;
+  }
+  .title {
+    font-size: var(--fs-xl);
+  }
+}

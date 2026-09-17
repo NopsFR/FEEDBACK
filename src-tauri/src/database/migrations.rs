@@ -135,6 +135,15 @@ const MIGRATIONS: &[&str] = &[
     r#"
     ALTER TABLE playlist ADD COLUMN rules TEXT;
     "#,
+    // 5 — retry receipts for phone edits, scoped to the paired device
+    r#"
+    CREATE TABLE phone_edit_receipt (
+        device_id INTEGER NOT NULL REFERENCES device(id) ON DELETE CASCADE,
+        operation_id TEXT NOT NULL,
+        result TEXT NOT NULL,
+        PRIMARY KEY(device_id, operation_id)
+    );
+    "#,
 ];
 
 pub fn run(conn: &mut Connection) -> rusqlite::Result<()> {

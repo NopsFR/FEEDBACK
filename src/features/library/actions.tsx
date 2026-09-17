@@ -15,13 +15,14 @@ import { editTracks } from "./MetadataEditor";
 const I = (n: Parameters<typeof Icon>[0]["name"]) => <Icon name={n} size={16} />;
 
 export async function toggleFavourite(t: Track, on?: boolean) {
-  const next = on ?? !useLibrary.getState().favourites.has(t.id);
+  const next = on ?? !(useLibrary.getState().favouriteOverrides[t.id] ?? (useLibrary.getState().favourites.has(t.id) || t.favourite));
   useLibrary.getState().setFavourite(t.id, next);
   usePlayer.getState().patchTrack(t.id, { favourite: next });
   try {
     await library.setFavourite(t.id, next);
   } catch (e) {
     useLibrary.getState().setFavourite(t.id, !next);
+    usePlayer.getState().patchTrack(t.id, { favourite: !next });
     toastError(e);
   }
 }
@@ -67,7 +68,7 @@ export function trackMenu(tracks: Track[], opts: { playlistId?: number; entryIds
   const p = usePlayer.getState();
   const nav = useNav.getState();
   const one = tracks.length === 1 ? tracks[0] : null;
-  const fav = one ? useLibrary.getState().favourites.has(one.id) || one.favourite : false;
+  const fav = one ? useLibrary.getState().favouriteOverrides[one.id] ?? (useLibrary.getState().favourites.has(one.id) || one.favourite) : false;
   const items: MenuItem[] = [
     { label: tracks.length > 1 ? `Play ${tracks.length} tracks` : "Play", icon: I("play"), run: () => p.playTracks(tracks, 0) },
     { label: "Play next", icon: I("queue"), run: () => p.playNext(tracks) },
@@ -97,6 +98,20 @@ export function trackMenu(tracks: Track[], opts: { playlistId?: number; entryIds
   if (isTauri) items.push({ label: tracks.length > 1 ? "Edit details…" : "Edit details…", icon: I("edit"), run: () => editTracks(tracks) });
   if (opts.playlistId && opts.entryIds?.length) {
     items.push({ label: "", separator: true });
+    if (!isTauri && opts.entryIds.length === 1) {
+      for (const direction of [-1, 1]) items.push({ label: direction < 0 ? "Move up" : "Move down", run: async () => {
+        try {
+          const d = await library.playlist(opts.playlistId!);
+          const ids = d.entries.map((e) => e.entryId);
+          const index = ids.indexOf(opts.entryIds![0]);
+          const target = index + direction;
+          if (index < 0 || target < 0 || target >= ids.length) return;
+          [ids[index], ids[target]] = [ids[target], ids[index]];
+          await library.reorderPlaylist(opts.playlistId!, ids);
+          opts.onRemoved?.();
+        } catch (e) { toastError(e); }
+      } });
+    }
     items.push({
       label: "Remove from this playlist",
       icon: I("close"),

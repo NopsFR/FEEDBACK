@@ -62,9 +62,10 @@ export function Transport() {
   const queue = usePlayer((p) => p.queue);
   const { toggle, next, prev, toggleShuffle, cycleRepeat } = usePlayer.getState();
   const favs = useLibrary((l) => l.favourites);
+  const favOverrides = useLibrary((l) => l.favouriteOverrides);
   const go = useNav((n) => n.go);
   const { queueOpen, toggleQueue, nowPlayingOpen, setNowPlaying } = useUi();
-  const fav = current ? favs.has(current.id) || current.favourite : false;
+  const fav = current ? favOverrides[current.id] ?? (favs.has(current.id) || current.favourite) : false;
 
   return (
     <footer className={`${s.bar} ${current ? "" : s.idle}`}>

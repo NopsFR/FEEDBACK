@@ -24,6 +24,7 @@ export function MobilePlayer() {
   const { toggle, next, prev, seek, toggleShuffle, cycleRepeat, jumpTo } = usePlayer.getState();
   const { pos, dur } = usePosition();
   const favs = useLibrary((l) => l.favourites);
+  const favOverrides = useLibrary((l) => l.favouriteOverrides);
   const close = () => useUi.getState().setNowPlaying(false);
   const amb = useAmbient(current?.art);
   const [panel, setPanel] = useState<Panel>("art");
@@ -33,7 +34,7 @@ export function MobilePlayer() {
 
   if (!current) return null;
   const total = dur || current.durationMs;
-  const fav = favs.has(current.id) || current.favourite;
+  const fav = favOverrides[current.id] ?? (favs.has(current.id) || current.favourite);
 
   const onStart = (e: TouchEvent) => {
     t0.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now(), axis: null };

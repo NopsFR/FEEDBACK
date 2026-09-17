@@ -154,3 +154,17 @@
 .tab {
   position: relative;
 }
+
+/* Phone landscape: keep chrome shallow so the list still has room. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .shell {
+    --tabs-h: 46px;
+    --mini-h: 52px;
+  }
+  .topbar {
+    height: calc(env(safe-area-inset-top) + 36px);
+  }
+  .back {
+    height: 36px;
+  }
+}

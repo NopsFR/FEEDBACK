@@ -3,6 +3,11 @@
   container-type: inline-size;
 }
 
+@container (max-width: 520px) {
+  .list .header, .list .row { grid-template-columns: var(--cols-phone); column-gap: 6px; padding: 0 4px; }
+  .list .fav { opacity: 1; width: 44px; height: 44px; }
+}
+
 .header,
 .row {
   display: grid;

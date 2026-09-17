@@ -12,6 +12,9 @@ Local-first music + music-video player. Tauri 2 (Rust) + React 19 + TypeScript +
 - crates.io is reachable from Windows, not from the cloud container. npm registry reachable from both.
 - Screenshot QA without touching the user's mouse: run dev with `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222`, then `node tests/e2e/drive.mjs <steps.json> .sync/qaN` and stage the PNGs.
 - Blender: prefer headless CLI scripts in `design/blender/*.py`. If the MCP bridge fails, don't burn time on it.
+- Run git through PowerShell (Desktop Commander), never `device_bash`: the Linux VM's git leaves a `.git/index.lock` it can't remove and reports every file as changed (no `core.autocrlf` there).
+- PowerShell `>` writes UTF-16. Redirect through `cmd /c "... > file"` when a tool has to read the output back.
+- Vite HMR goes stale when a file gains a new component; restart `.sync\dev.ps1` before screenshot QA or you'll chase phantom "X is not defined" errors.
 - User doesn't want routine status messages. Only interrupt for real blockers.
 
 ## Brand (short)
@@ -25,7 +28,8 @@ Local-first music + music-video player. Tauri 2 (Rust) + React 19 + TypeScript +
 Working 0.1.0: desktop app, installer, library engine, playback, core UI, Now Playing, playlists, metadata editor,
 downloads, LAN phone server + PWA with offline albums, brand system, renders, marketing, landing page.
 Useful scripts on Windows: `.sync\dev.ps1` (restart dev with CDP), `.sync\cargotest.cmd`, `tests/e2e/drive.mjs`,
-`tests/e2e/pwa.mjs <code>`, `tests/e2e/prod-smoke.mjs`. Blender: `blender -b -P design/blender/build_assets.py`.
+`tests/e2e/pwa.mjs <code>`, `tests/e2e/prod-smoke.mjs`, `tests/e2e/phone-edits.mjs`, `tests/e2e/phone-widths.mjs`,
+`tests/e2e/smart-playlists.mjs`, `tests/e2e/pwa-shell.mjs` (needs `pnpm build:pwa` + `pnpm vite preview --outDir dist-pwa --port 4173`). Blender: `blender -b -P design/blender/build_assets.py`.
 
 ## Code rules
 - One authoritative playback/queue service (`src/features/player/engine`). No fake controls.

@@ -83,6 +83,7 @@ pub fn compile(rules: &Rules) -> Result<(String, Vec<Value>), String> {
             ("year", "eq") => ("COALESCE(t.year,0) = ?", Value::Integer(number(&c.value)?)),
             ("year", "gte") => ("COALESCE(t.year,0) >= ?", Value::Integer(number(&c.value)?)),
             ("year", "lte") => ("COALESCE(t.year,0) <= ?", Value::Integer(number(&c.value)?)),
+            ("plays", "eq") => ("COALESCE(st.play_count,0) = ?", Value::Integer(number(&c.value)?)),
             ("plays", "gte") => ("COALESCE(st.play_count,0) >= ?", Value::Integer(number(&c.value)?)),
             ("plays", "lte") => ("COALESCE(st.play_count,0) <= ?", Value::Integer(number(&c.value)?)),
             ("duration", "gte") => ("t.duration_ms >= ? * 1000", Value::Integer(number(&c.value)?)),
@@ -118,7 +119,8 @@ pub fn compile(rules: &Rules) -> Result<(String, Vec<Value>), String> {
         clauses.join(join)
     );
     if let Some(limit) = rules.limit {
-        tail.push_str(&format!(" LIMIT {limit}"));
+        tail.push_str(" LIMIT ?");
+        values.push(Value::Integer(limit.into()));
     }
     Ok((tail, values))
 }
@@ -134,6 +136,33 @@ pub fn tracks(conn: &Connection, rules: &Rules) -> rusqlite::Result<Vec<TrackRow
 
 #[cfg(test)]
 mod tests {
+    /// Every rule the editor offers (src/features/playlists/SmartPlaylistEditor.tsx) must compile here.
+    #[test]
+    fn every_offered_rule_compiles() {
+        let pairs = [
+            ("genre", "is"), ("genre", "contains"), ("genre", "not"),
+            ("artist", "is"), ("artist", "contains"), ("artist", "not"),
+            ("album", "is"), ("album", "contains"), ("album", "not"),
+            ("codec", "is"),
+            ("year", "eq"), ("year", "gte"), ("year", "lte"),
+            ("plays", "eq"), ("plays", "gte"), ("plays", "lte"),
+            ("duration", "gte"), ("duration", "lte"),
+            ("added", "within"),
+            ("lastPlayed", "within"), ("lastPlayed", "notWithin"), ("lastPlayed", "never"),
+            ("favourite", "true"), ("favourite", "false"),
+        ];
+        for (field, op) in pairs {
+            let value = if matches!(field, "genre" | "artist" | "album" | "codec") { serde_json::json!("x") } else { serde_json::json!(2) };
+            let rules = super::Rules {
+                r#match: super::Match::All,
+                conditions: vec![super::Condition { field: field.into(), op: op.into(), value }],
+                sort: super::Sort::Title,
+                limit: None,
+            };
+            super::compile(&rules).unwrap_or_else(|e| panic!("{field} {op}: {e}"));
+        }
+    }
+
     use super::*;
     #[test]
     fn compiler_binds_values_and_rejects_unknown_rules() {
@@ -149,7 +178,7 @@ mod tests {
         };
         let (sql, values) = compile(&rules).unwrap();
         assert!(!sql.contains("OR 1=1"));
-        assert_eq!(values, vec![Value::Text("x') OR 1=1 --".into())]);
+        assert_eq!(values, vec![Value::Text("x') OR 1=1 --".into()), Value::Integer(50)]);
         let bad = Rules {
             conditions: vec![Condition {
                 field: "path".into(),

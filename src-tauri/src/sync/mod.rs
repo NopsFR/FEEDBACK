@@ -3,6 +3,7 @@
 //! explicit pairing with a short-lived code, per-device bearer tokens, revocable. Only library media by id is exposed.
 pub mod certs;
 pub mod server;
+pub mod edits;
 
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::Serialize;

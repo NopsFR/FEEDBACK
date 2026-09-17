@@ -1,3 +1,28 @@
+.sync {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 14px;
+  padding: 12px 0 16px;
+  border-top: 1px solid var(--line-1);
+  border-bottom: 1px solid var(--line-1);
+  margin-bottom: 24px;
+}
+.syncState {
+  color: var(--paper-1);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+}
+.syncNote {
+  flex: 1 1 220px;
+  color: var(--paper-3);
+  line-height: 1.5;
+}
+.syncActions {
+  display: flex;
+  gap: 8px;
+}
 .warn {
   padding: 14px 16px;
   background: var(--wine);

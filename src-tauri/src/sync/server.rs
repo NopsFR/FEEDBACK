@@ -23,6 +23,7 @@ struct Ctx {
 }
 
 pub struct Running {
+    #[allow(dead_code)] // kept for diagnostics and future settings UI
     pub port: u16,
     pub urls: Vec<String>,
     pub setup_url: String,
@@ -87,6 +88,7 @@ pub async fn start(app: AppHandle, port: u16, pwa_dir: Option<PathBuf>) -> Resul
         .route("/api/lyrics/{id}", get(lyrics))
         .route("/api/favourite/{id}", post(favourite))
         .route("/api/play/{id}", post(record_play))
+        .route("/api/edits", post(phone_edit))
         .route("/media/track/{id}", get(media_track))
         .route("/media/art/{hash}/{size}", get(media_art))
         .fallback(get(static_file))
@@ -187,6 +189,22 @@ macro_rules! guarded {
 
 async fn hello() -> impl IntoResponse {
     Json(serde_json::json!({ "app": "FEEDBACK", "version": env!("CARGO_PKG_VERSION") }))
+}
+
+async fn phone_edit(AxState(ctx): AxState<Ctx>, headers: HeaderMap, Query(q): Query<TokenQuery>, Json(edit): Json<super::edits::Edit>) -> Response {
+    let Some(token) = bearer(&headers, &q) else { return StatusCode::UNAUTHORIZED.into_response() };
+    let state = ctx.app.state::<AppState>();
+    let Ok(Some(device)) = state.db.with(|c| check_token(c, &token)) else { return StatusCode::UNAUTHORIZED.into_response() };
+    let result = state.db.with_mut(|c| Ok(super::edits::apply(c, device, edit)));
+    match result {
+        Ok(Ok(result)) => {
+            use tauri::Emitter;
+            let _ = ctx.app.emit("library-changed", ());
+            Json(result).into_response()
+        }
+        Ok(Err(message)) => (StatusCode::CONFLICT, Json(serde_json::json!({"message": message}))).into_response(),
+        Err(e) => json::<()>(Err(e)),
+    }
 }
 
 #[derive(Deserialize)]

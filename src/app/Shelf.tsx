@@ -6,8 +6,10 @@ import { useLibrary } from "@/state/library";
 import { useNav, type Route } from "@/state/nav";
 import { toast, toastError, useUi } from "@/state/ui";
 import { library } from "@/services/library";
+import { plural } from "@/lib/format";
 import { playlistMenu } from "@/features/playlists/actions";
 import { editSmartPlaylist } from "@/features/playlists/SmartPlaylistEditor";
+import { isTauri } from "@/services/platform";
 import s from "./Shelf.module.css";
 
 interface Item {
@@ -142,7 +144,7 @@ export function Shelf() {
                 </button>
               );
             })}
-          {!collapsed && <button className={s.emptyPl} onClick={() => editSmartPlaylist()}><Icon name="playlist" size={14} /> New smart playlist</button>}
+          {!collapsed && isTauri && <button className={s.emptyPl} onClick={() => editSmartPlaylist()}><Icon name="playlist" size={14} /> New smart playlist</button>}
           {!collapsed && !playlists.length && (
             <button className={s.emptyPl} onClick={create}>
               Make your first playlist
@@ -162,7 +164,7 @@ export function Shelf() {
               </>
             ) : overview ? (
               <span className="truncate mono">
-                {overview.tracks.toLocaleString()} tracks · {overview.albums.toLocaleString()} albums
+                {plural(overview.tracks, "track")} · {plural(overview.albums, "album")}
               </span>
             ) : null}
           </div>

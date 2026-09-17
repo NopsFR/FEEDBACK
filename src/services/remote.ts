@@ -3,6 +3,7 @@ import { FeedbackError } from "./ipc";
 import { getToken } from "./platform";
 import type { Album, Lyrics, Track } from "./types";
 import * as offline from "./offline";
+import * as phone from "./phone";
 
 /** PWA data access: talks to the paired desktop over HTTPS; falls back to what's stored on this device. */
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
@@ -20,7 +21,9 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
     throw new FeedbackError({ code: "unpaired", message: "This phone isn't paired any more." });
   }
   if (!res.ok) throw new FeedbackError({ code: "http", message: "Your computer couldn't answer that." });
-  return res.json() as Promise<T>;
+  const data = await res.json() as T;
+  void phone.flush();
+  return phone.overlay(data);
 }
 
 const unsupported = (what: string) => async () => {
@@ -34,7 +37,7 @@ function withOffline<A extends unknown[], T>(online: (...a: A) => Promise<T>, fa
     try {
       return await online(...a);
     } catch (e) {
-      if (e instanceof FeedbackError && e.code === "offline") return fallback(...a);
+      if (e instanceof FeedbackError && e.code === "offline") return phone.overlay(await fallback(...a));
       throw e;
     }
   };
@@ -52,7 +55,7 @@ export const remoteLibrary: LibraryService = {
   albumsBy: withOffline((f: { genre?: string; year?: number }) => api<Album[]>(`/api/albums/by?${f.genre ? `genre=${encodeURIComponent(f.genre)}` : `year=${f.year ?? ""}`}`), async () => [] as Album[]),
   search: withOffline((q) => api(`/api/search?q=${encodeURIComponent(q)}`), offline.search),
   home: withOffline(() => api("/api/home"), offline.home),
-  smart: withOffline((which: string) => api<Track[]>(`/api/smart/${which}`), async () => [] as Track[]),
+  smart: withOffline((which: string) => api<Track[]>(`/api/smart/${which}`), async (which) => which === "favourites" ? phone.favouriteTracks() : [] as Track[]),
   folders: async () => [],
   addFolder: unsupported("Adding folders"),
   removeFolder: unsupported("Removing folders"),
@@ -60,22 +63,27 @@ export const remoteLibrary: LibraryService = {
   cancelScan: async () => {},
   importPaths: unsupported("Importing"),
   setFavourite: async (id, on) => {
-    await api(`/api/favourite/${id}`, { method: "POST", body: JSON.stringify({ on }) });
+    phone.favourite(id, on);
   },
   recordPlay: async (id, ms, skipped) => {
     await api(`/api/play/${id}`, { method: "POST", body: JSON.stringify({ ms, skipped }) }).catch(() => offline.queuePlay(id, ms, skipped));
   },
-  playlists: withOffline(() => api("/api/playlists"), async () => []),
-  playlist: withOffline((id) => api(`/api/playlist/${id}`), offline.playlist),
-  createPlaylist: unsupported("Creating playlists"),
+  playlists: withOffline(async () => phone.playlists(await api("/api/playlists")), async () => phone.playlists()),
+  playlist: async (id) => {
+    const local = phone.localPlaylist(id);
+    if (local && (phone.dirty(id) || !navigator.onLine)) return phone.overlay(local);
+    try { return phone.cachePlaylist(await api(`/api/playlist/${local?.playlist.id ?? id}`)); }
+    catch (e) { if (e instanceof FeedbackError && e.code === "offline") return phone.overlay(local ?? await offline.playlist(id)); throw e; }
+  },
+  createPlaylist: async (name, ids = []) => phone.editPlaylist(null, (d) => { d.playlist.name = name; phone.append(d, ids); }),
   createSmartPlaylist: unsupported("Creating smart playlists"),
   setPlaylistRules: unsupported("Editing smart playlists"),
-  renamePlaylist: unsupported("Renaming playlists"),
-  deletePlaylist: unsupported("Deleting playlists"),
-  duplicatePlaylist: unsupported("Duplicating playlists"),
-  addToPlaylist: unsupported("Editing playlists"),
-  removeFromPlaylist: unsupported("Editing playlists"),
-  reorderPlaylist: unsupported("Editing playlists"),
+  renamePlaylist: async (id, name, description) => { await remoteLibrary.playlist(id); phone.editPlaylist(id, (d) => { d.playlist.name = name; d.playlist.description = description ?? null; }); },
+  deletePlaylist: async (id) => { await remoteLibrary.playlist(id); phone.editPlaylist(id, () => {}, true); },
+  duplicatePlaylist: async (id) => { const d = await remoteLibrary.playlist(id); return remoteLibrary.createPlaylist(`${d.playlist.name} (copy)`, d.entries.map((e) => e.track.id)); },
+  addToPlaylist: async (id, ids) => { await remoteLibrary.playlist(id); phone.editPlaylist(id, (d) => phone.append(d, ids)); return ids.length; },
+  removeFromPlaylist: async (id, ids) => { await remoteLibrary.playlist(id); phone.editPlaylist(id, (d) => { d.entries = d.entries.filter((e) => !ids.includes(e.entryId)); }); },
+  reorderPlaylist: async (id, ids) => { await remoteLibrary.playlist(id); phone.editPlaylist(id, (d) => { const byId = new Map(d.entries.map((e) => [e.entryId, e])); d.entries = [...new Set(ids)].flatMap((id) => byId.has(id) ? [byId.get(id)!] : []).concat(d.entries.filter((e) => !ids.includes(e.entryId))); }); },
   settings: async () => {
     try {
       return JSON.parse(localStorage.getItem("feedback.pwa.settings") || "{}");

@@ -14,6 +14,7 @@ interface LibraryState {
   artists: Artist[] | null;
   playlists: Playlist[];
   favourites: Set<number>;
+  favouriteOverrides: Record<number, boolean>;
   scan: ScanProgress | null;
   invalidate: () => void;
   loadOverview: () => Promise<void>;
@@ -33,6 +34,7 @@ export const useLibrary = create<LibraryState>((set, get) => ({
   artists: null,
   playlists: [],
   favourites: new Set(),
+  favouriteOverrides: {},
   scan: null,
   invalidate: () => {
     set({ version: get().version + 1, tracks: null, albums: null, artists: null });
@@ -67,7 +69,7 @@ export const useLibrary = create<LibraryState>((set, get) => ({
     const f = new Set(get().favourites);
     if (on) f.add(id);
     else f.delete(id);
-    set({ favourites: f });
+    set({ favourites: f, favouriteOverrides: { ...get().favouriteOverrides, [id]: on } });
   },
 }));
 

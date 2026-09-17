@@ -12,5 +12,5 @@ export function useMedia(query: string): boolean {
   );
 }
 
-/** Phone-sized layout (touch-first shell). */
-export const useIsMobile = () => useMedia("(max-width: 760px)");
+/** Phone-sized layout (touch-first shell). Short touch viewports are phones in landscape. */
+export const useIsMobile = () => useMedia("(max-width: 760px), ((max-height: 520px) and (pointer: coarse))");

@@ -58,12 +58,26 @@ Restore on launch loads the queue paused unless "Resume on launch" is on.
 
 ## Data
 SQLite in the app data dir (`%APPDATA%\app.feedback.player\feedback.db` on Windows). Migrations in
-`database/migrations.rs` (append-only, `PRAGMA user_version`, currently v4). WAL mode. Tables: `library_folder, artist, album, track,
+`database/migrations.rs` (append-only, `PRAGMA user_version`, currently v5). WAL mode. Tables: `library_folder, artist, album, track,
 artwork, play_stats, play_history, favourite, playlist, playlist_track, setting, track_fts`.
 
 Smart playlists store validated JSON rules in `playlist.rules`. `library/smart.rs` compiles a fixed whitelist of fields,
 operators and sort orders into SQL; user values are always bound parameters. Their entries and summary artwork/counts are
 computed from the current library, while a `NULL` rules value keeps the manual playlist behaviour.
+
+Phone edits use a versioned, pairing-scoped local metadata store (`services/phone.ts`) and an authenticated `/api/edits`
+endpoint. Each operation has a stable UUID; SQLite commits its receipt and changes together. Retries return the stored
+result. Playlist edits compare the original name, description and ordered entry identities with the current desktop
+version; a conflict produces a separate phone copy. Conflicting deletes stay pending for review. Favourites apply in
+queued order when reconnecting. Audio remains in the opt-in offline store. Browsed track metadata persisted alongside
+edits is bounded; storage failures leave the previous saved state intact and surface an error.
+
+The PWA service worker (`public/sw.js`) caches the app shell only. Install pre-caches the entry scripts parsed out of
+`index.html`; every successful navigation re-adopts the served document, adds its scripts and deletes only the assets the
+previous build listed in `/__shell-manifest`, so a release can't leave the phone on a stale bundle and lazy chunks survive.
+
+Now Playing lazy-loads `DiscView.tsx` and the bundled `design/blender/exports/feedback-disc.glb` only for Disc mode.
+The Three.js renderer disposes resources on unmount and stops its animation loop when paused, hidden or motion-reduced.
 
 ## Services abstraction
 `src/services/library.ts` defines `LibraryService`. Desktop uses `tauriLibrary`. The PWA will provide an implementation

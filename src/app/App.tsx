@@ -24,6 +24,8 @@ import { useSettings } from "@/state/settings";
 import { getToken, isTauri, setToken } from "@/services/platform";
 import { PairScreen } from "@/features/offline/PairScreen";
 import * as offline from "@/services/offline";
+import * as phone from "@/services/phone";
+import { useNav } from "@/state/nav";
 import type { ScanProgress } from "@/services/types";
 import { log } from "@/lib/log";
 import s from "./App.module.css";
@@ -79,7 +81,7 @@ export function App() {
   useEffect(() => {
     if (!paired) return;
     // Load everything in parallel with the intro — the intro never delays readiness.
-    Promise.allSettled([isTauri ? Promise.resolve() : offline.init(), useSettings.getState().load(), useLibrary.getState().loadOverview(), useLibrary.getState().loadPlaylists()])
+    (isTauri ? Promise.resolve() : offline.init().then(() => phone.init())).then(() => Promise.allSettled([useSettings.getState().load(), useLibrary.getState().loadOverview(), useLibrary.getState().loadPlaylists()]))
       .then(() => usePlayer.getState().restore())
       .catch((e) => log.error("UI", "boot", e))
       .finally(() => setBooted(true));
@@ -87,6 +89,17 @@ export function App() {
 
   useEffect(() => {
     if (isTauri) return;
+    const sync = () => { void phone.flush(); };
+    const changed = () => useLibrary.getState().invalidate();
+    const remap = (e: Event) => {
+      const { oldId, newId } = (e as CustomEvent<{ oldId: number; newId: number }>).detail;
+      const nav = useNav.getState();
+      if (nav.route.name === "playlist" && nav.route.id === oldId) nav.go({ name: "playlist", id: newId });
+    };
+    window.addEventListener("online", sync);
+    window.addEventListener("feedback:phone-change", changed);
+    window.addEventListener("feedback:playlist-remap", remap);
+    sync();
     const onUnpaired = () => {
       setToken(null);
       setPaired(false);
@@ -95,7 +108,12 @@ export function App() {
     if ("serviceWorker" in navigator && window.isSecureContext && !import.meta.env.DEV) {
       navigator.serviceWorker.register("/sw.js").catch((e) => log.warn("UI", "service worker", e));
     }
-    return () => window.removeEventListener("feedback:unpaired", onUnpaired);
+    return () => {
+      window.removeEventListener("feedback:unpaired", onUnpaired);
+      window.removeEventListener("online", sync);
+      window.removeEventListener("feedback:phone-change", changed);
+      window.removeEventListener("feedback:playlist-remap", remap);
+    };
   }, []);
 
   if (!paired) return <PairScreen onPaired={() => setPaired(true)} />;

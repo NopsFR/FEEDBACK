@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import * as offline from "@/services/offline";
+import * as phone from "@/services/phone";
 import { library } from "@/services/library";
 import { useNav } from "@/state/nav";
 import { usePlayer } from "@/features/player/store";
 import { Button } from "@/components/Button";
+import { confirmAction } from "@/components/Dialog";
 import { IconButton } from "@/components/IconButton";
 import { EmptyState } from "@/components/EmptyState";
 import { Artwork } from "@/components/Artwork";
@@ -16,14 +18,43 @@ export function useOfflineVersion() {
   const [v, setV] = useState(0);
   useEffect(() => {
     const un = offline.onChange(() => setV((x) => x + 1));
+    const changed = () => setV((x) => x + 1);
+    window.addEventListener("feedback:phone-change", changed);
+    window.addEventListener("feedback:sync-status", changed);
     return () => {
       un();
+      window.removeEventListener("feedback:phone-change", changed);
+      window.removeEventListener("feedback:sync-status", changed);
     };
   }, []);
   return v;
 }
 
 /** What's physically on this phone, how much space it takes, and what the browser allows. */
+/** Pending phone edits: what's waiting, and the two ways out of a stuck queue. */
+function SyncRow() {
+  const { pending, notice, syncing } = phone.status();
+  if (!pending && !notice) return null;
+  return (
+    <div className={s.sync} role="status">
+      <span className={`mono ${s.syncState}`}>{syncing ? "Syncing…" : pending ? `${plural(pending, "edit")} waiting` : "Synced"}</span>
+      {notice && <span className={s.syncNote}>{notice}</span>}
+      {pending > 0 && (
+        <span className={s.syncActions}>
+          <Button variant="secondary" disabled={syncing} onClick={() => void phone.flush()}>Try again</Button>
+          {notice && (
+            <Button variant="quiet" disabled={syncing} onClick={async () => {
+              if (await confirmAction("Discard pending edit?", "Discard the oldest pending edit, and any later edits to that playlist on this phone? The computer's version is kept.", "Discard", true)) {
+                try { phone.discardFirstEdit(); } catch (e) { toastError(e); }
+              }
+            }}>Discard oldest</Button>
+          )}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function OfflinePage() {
   const v = useOfflineVersion();
   const go = useNav((n) => n.go);
@@ -39,6 +70,7 @@ export function OfflinePage() {
   return (
     <Page>
       <PageHead label="Library" title="On this phone" meta={`${bytes(used)} saved${info?.quota ? ` · ${bytes(info.quota)} allowed by the browser` : ""}`} />
+      <SyncRow />
 
       {info && !info.secure && (
         <p className={s.warn}>This page isn't on a secure connection, so nothing can be saved offline. Finish the certificate step from the setup page on your computer, then open the https:// address.</p>
