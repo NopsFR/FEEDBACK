@@ -1,6 +1,6 @@
 .page {
   padding: 36px clamp(24px, 3.4vw, 56px) 80px;
-  max-width: 1680px;
+  max-width: clamp(1680px, 82vw, 2160px);
   margin: 0 auto;
   animation: enter var(--t-ui) var(--ease-out);
 }

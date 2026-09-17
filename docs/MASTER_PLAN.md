@@ -19,10 +19,12 @@
 - [x] **15 Marketing** — screenshots, renders, social header/OG, wallpapers, press kit, landing page (`site/`)
 - [x] **16 Windows release** — NSIS installer built, installed, launched, played (0.1.0)
 
+- [x] Windows SMTC: session appears in the OS media flyout with title/artist; pause from Windows verified, next/previous exposed (session is listed under the WebView2 host name)
+- [x] Layout QA at 980×640 (min window), 1280×720@150%, 1536×864@125%, 2560×1440; content column widens on large displays
+- [x] Startup intro FULL frames checked (carrier line → spikes → misregistered print → tear exit)
+
 ## Open
 - [~] iPhone: test on a real device (certificate trust, Home Screen install, lock-screen playback) — see MOBILE.md checklist
-- [~] Windows media keys / SMTC via WebView2 Media Session — wired, not yet confirmed on the OS flyout; fallback plan: `souvlaki` crate
-- [ ] QA at 125% / 150% scaling and 2560×1440 (done: 1440×900, 1100×700, 390×844)
 - [ ] Rule-based smart playlists (year/genre/plays filters) — current smart lists are fixed views
 - [ ] Phone: edit playlists/favourites offline and reconcile on reconnect (currently favourites/plays sync; playlists are read-only on phone)
 - [ ] Use the disc GLB in-app (e.g. Now Playing "disc" mode) — assets exist, runtime not integrated
