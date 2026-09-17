@@ -1,0 +1,155 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 32px 24px;
+}
+.shelf {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: clamp(240px, 22vw, 320px);
+  gap: 24px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  scrollbar-width: none;
+}
+.card {
+  min-width: 0;
+}
+.cardBtn {
+  display: block;
+  width: 100%;
+}
+.thumb {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--ink-3);
+  overflow: hidden;
+  border-radius: var(--r-1);
+}
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--t-edit) var(--ease-out);
+}
+.card:hover .thumb img {
+  transform: scale(1.03);
+}
+.thumbBlank {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--paper-4);
+  background: url("../../assets/textures/scratches.png") center / 200% auto, linear-gradient(160deg, #1a1a1a, #0b0b0b);
+}
+.len {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 5px;
+  background: rgba(0, 0, 0, 0.75);
+  color: var(--paper-1);
+  font-size: 10.5px;
+}
+.playIcon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 48px;
+  height: 48px;
+  margin: -24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--paper-1);
+  color: var(--ink-0);
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity var(--t-micro) var(--ease-out), transform var(--t-ui) var(--ease-out);
+}
+.card:hover .playIcon {
+  opacity: 1;
+  transform: scale(1);
+}
+.title {
+  margin-top: 10px;
+  font-weight: 520;
+}
+.artist {
+  display: block;
+  max-width: 100%;
+  font-size: var(--fs-sm);
+  color: var(--paper-2);
+}
+.artist:hover {
+  color: var(--paper-1);
+}
+.player {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-nowplaying) + 5);
+  background: #000;
+  display: grid;
+  place-items: center;
+  animation: vin var(--t-ui) var(--ease-out);
+}
+@keyframes vin {
+  from {
+    opacity: 0;
+  }
+}
+.video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+.pTop,
+.pBar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  padding: 18px 24px;
+  transition: opacity var(--t-ui) var(--ease-out);
+}
+.pTop {
+  top: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background: linear-gradient(rgba(0, 0, 0, 0.7), transparent);
+}
+.pTitle {
+  font-family: var(--font-display);
+  font-stretch: 120%;
+  font-weight: 800;
+  font-size: 22px;
+  text-transform: uppercase;
+}
+.pArtist {
+  color: var(--paper-2);
+}
+.pBar {
+  bottom: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+}
+.pControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pTime {
+  margin-left: 10px;
+  color: var(--paper-2);
+}
+.pVol {
+  width: 100px;
+}
+.idle {
+  cursor: none;
+}
+.idle .pTop,
+.idle .pBar {
+  opacity: 0;
+}

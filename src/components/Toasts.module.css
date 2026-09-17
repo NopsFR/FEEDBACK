@@ -1,0 +1,53 @@
+.stack {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--transport-h) + 18px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: var(--z-toast);
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: min(560px, 90vw);
+  padding: 10px 14px;
+  background: var(--paper-1);
+  color: var(--ink-1);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  border-radius: var(--r-1);
+  animation: rise var(--t-ui) var(--ease-out);
+}
+.error {
+  background: var(--burgundy);
+  color: var(--paper-1);
+}
+.msg {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.action {
+  font-family: var(--font-display);
+  font-stretch: 112%;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}

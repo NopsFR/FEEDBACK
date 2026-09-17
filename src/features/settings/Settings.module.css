@@ -1,0 +1,209 @@
+.layout {
+  max-width: 980px;
+}
+.group {
+  margin-bottom: 52px;
+  scroll-margin-top: 20px;
+}
+.groupTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-2);
+  font-family: var(--font-display);
+  font-stretch: 112%;
+  font-weight: 640;
+  font-size: 11px;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+.groupTitle :global(.mono) {
+  color: var(--red);
+}
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 32px;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line-1);
+}
+.rowLabel {
+  font-weight: 540;
+}
+.rowHint {
+  margin-top: 3px;
+  color: var(--paper-3);
+  font-size: var(--fs-sm);
+  max-width: 560px;
+  line-height: 1.5;
+}
+.rowControl {
+  display: flex;
+  justify-content: flex-end;
+}
+.muted {
+  color: var(--paper-3);
+  font-size: var(--fs-sm);
+}
+.toggle {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  background: var(--ink-5);
+  box-shadow: inset 0 0 0 1px var(--line-3);
+  border-radius: 11px;
+  transition: background-color var(--t-micro) var(--ease-out);
+}
+.toggle span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--paper-3);
+  transition: transform var(--t-ui) var(--ease-snap), background-color var(--t-micro) var(--ease-out);
+}
+.toggleOn {
+  background: var(--burgundy);
+  box-shadow: none;
+}
+.toggleOn span {
+  transform: translateX(18px);
+  background: var(--paper-1);
+}
+.slider {
+  width: 200px;
+}
+.folders {
+  padding: 8px 0 16px;
+  border-bottom: 1px solid var(--line-1);
+}
+.folder {
+  display: grid;
+  grid-template-columns: 22px 1fr auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 4px;
+  color: var(--paper-2);
+  border-bottom: 1px dashed var(--line-1);
+}
+.folderText {
+  min-width: 0;
+}
+.folderText :global(.mono) {
+  color: var(--paper-3);
+  font-size: 10.5px;
+}
+.folderPath {
+  color: var(--paper-1);
+  user-select: text;
+}
+.unavailable {
+  opacity: 0.55;
+}
+.folderActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+.eq {
+  padding: 16px 0;
+}
+.eqTop {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.select {
+  height: 30px;
+  padding: 0 10px;
+  background: var(--ink-2);
+  color: var(--paper-1);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-1);
+  text-transform: capitalize;
+}
+.bands {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 8px;
+  padding: 20px 16px 12px;
+  background: url("../../assets/textures/speaker-mesh.png") 0 0 / 8px 8px, var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line-1);
+  transition: opacity var(--t-ui) var(--ease-out);
+}
+.bandsOff {
+  opacity: 0.45;
+}
+.band {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.band input {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 28px;
+  height: 140px;
+  accent-color: var(--paper-1);
+  cursor: pointer;
+}
+.band :global(.mono) {
+  font-size: 10px;
+  color: var(--paper-3);
+}
+.band .db {
+  color: var(--paper-2);
+}
+.about {
+  padding: 24px 0;
+}
+.aboutMark {
+  width: 260px;
+  height: auto;
+  color: var(--paper-1);
+}
+.aboutLine {
+  margin: 8px 0 24px 12px;
+  font-size: 24px;
+  transform: rotate(-2deg);
+}
+.aboutList {
+  margin: 0;
+}
+.aboutList div {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line-1);
+}
+.aboutList dt {
+  color: var(--paper-3);
+  font-size: var(--fs-sm);
+}
+.aboutList dd {
+  margin: 0;
+  color: var(--paper-2);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  user-select: text;
+}
+.link {
+  text-align: left;
+  color: var(--paper-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line-3);
+  word-break: break-all;
+}
+.link:hover {
+  color: var(--paper-1);
+}

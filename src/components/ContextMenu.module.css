@@ -1,0 +1,68 @@
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-menu);
+  pointer-events: none;
+}
+.menu {
+  position: fixed;
+  pointer-events: auto;
+  min-width: 220px;
+  max-width: 320px;
+  padding: 5px;
+  background: rgba(16, 16, 16, 0.98);
+  box-shadow: var(--shadow-pop);
+  border-radius: var(--r-2);
+  animation: pop var(--t-micro) var(--ease-out);
+  outline: none;
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(-2px);
+  }
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 10px 7px 8px;
+  text-align: left;
+  font-size: var(--fs-sm);
+  color: var(--paper-1);
+  border-radius: var(--r-1);
+}
+.item:disabled {
+  color: var(--paper-4);
+}
+.focused {
+  background: var(--ink-5);
+}
+.icon {
+  width: 16px;
+  display: grid;
+  place-items: center;
+  color: var(--paper-2);
+}
+.text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hint {
+  font: 400 10.5px var(--font-mono);
+  color: var(--paper-3);
+}
+.danger {
+  color: var(--error);
+}
+.danger .icon {
+  color: var(--error);
+}
+.sep {
+  height: 1px;
+  background: var(--line-2);
+  margin: 5px 4px;
+}

@@ -1,0 +1,28 @@
+.grid {
+  position: relative;
+  width: 100%;
+}
+.row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: grid;
+}
+.shelf {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: clamp(150px, 15vw, 210px);
+  gap: 24px;
+  overflow-x: auto;
+  padding: 4px 2px 18px;
+  margin: -4px -2px 0;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+.shelf::-webkit-scrollbar {
+  display: none;
+}
+.shelfItem {
+  scroll-snap-align: start;
+}

@@ -1,0 +1,70 @@
+.art {
+  position: relative;
+  aspect-ratio: 1;
+  background: var(--ink-3);
+  overflow: hidden;
+  border-radius: var(--r-1);
+  isolation: isolate;
+}
+.art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: var(--ink-0);
+}
+/* faint jewel-case sheen along the top edge */
+.art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.07), transparent 28%, transparent 70%, rgba(0, 0, 0, 0.18));
+  pointer-events: none;
+  z-index: 1;
+}
+.rounded {
+  border-radius: var(--r-2);
+}
+
+.fallback {
+  display: flex;
+  align-items: flex-end;
+  padding: 10%;
+  background:
+    url("../assets/textures/scratches.png") center / 300% auto,
+    linear-gradient(160deg, #1b1b1b, #0c0c0c);
+  container-type: inline-size;
+}
+.fallback[data-variant="1"] {
+  background: url("../assets/textures/scratches.png") 30% 70% / 260% auto, linear-gradient(160deg, #2a0c10, #0d0506);
+}
+.fallback[data-variant="2"] {
+  background: url("../assets/textures/scratches.png") 70% 20% / 280% auto, linear-gradient(160deg, #1f1e1b, #0f0e0c);
+}
+.fallback[data-variant="3"] {
+  background: url("../assets/textures/speaker-mesh.png") 0 0 / 7px 7px, linear-gradient(160deg, #202020, #101010);
+}
+.fbLine {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 46%;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, var(--paper-3) 20%, var(--paper-3) 80%, transparent);
+  opacity: 0.5;
+}
+.fbTitle {
+  font-family: var(--font-display);
+  font-stretch: 125%;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--paper-3);
+  font-size: clamp(7px, 9cqi, 18px);
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  position: relative;
+  z-index: 2;
+}

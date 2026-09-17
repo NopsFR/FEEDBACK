@@ -1,0 +1,40 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 32px 28px;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  min-width: 0;
+}
+.art {
+  width: 100%;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  transition: transform var(--t-ui) var(--ease-out);
+}
+.card:hover .art {
+  transform: translateY(-3px);
+}
+.collage {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: var(--r-1);
+}
+.collage > * {
+  border-radius: 0;
+}
+.name {
+  max-width: 100%;
+  margin-top: 12px;
+  font-weight: 560;
+}
+.meta {
+  margin-top: 3px;
+  color: var(--paper-3);
+  font-size: 10.5px;
+}

@@ -1,0 +1,78 @@
+.wrap {
+  display: flex;
+  align-items: center;
+  gap: 56px;
+  padding: 72px 8px;
+  max-width: 820px;
+}
+.compact {
+  padding: 32px 0;
+  gap: 32px;
+}
+.compact .case {
+  width: 120px;
+}
+.case {
+  position: relative;
+  width: 210px;
+  aspect-ratio: 1.12;
+  flex-shrink: 0;
+  border: 1px solid rgba(230, 225, 214, 0.18);
+  background:
+    url("../assets/textures/scratches.png") center / 220% auto,
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01) 40%, rgba(0, 0, 0, 0.2));
+  border-radius: 2px;
+  transform: perspective(900px) rotateY(-14deg) rotateX(4deg);
+  box-shadow: 30px 40px 60px rgba(0, 0, 0, 0.5);
+}
+.tray {
+  position: absolute;
+  inset: 8% 8% 8% 14%;
+  border: 1px solid rgba(230, 225, 214, 0.1);
+  display: grid;
+  place-items: center;
+}
+.hub {
+  width: 30%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px dashed rgba(230, 225, 214, 0.22);
+  box-shadow: 0 0 0 10px rgba(230, 225, 214, 0.03), inset 0 0 0 12px rgba(230, 225, 214, 0.04);
+}
+.hinge {
+  position: absolute;
+  left: 4%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(230, 225, 214, 0.16);
+}
+.copy {
+  max-width: 440px;
+}
+.title {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-stretch: 125%;
+  font-weight: 850;
+  font-size: var(--fs-2xl);
+  text-transform: uppercase;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+}
+.body {
+  margin: 0;
+  color: var(--paper-2);
+  line-height: 1.55;
+}
+.action {
+  margin-top: 22px;
+  display: flex;
+  gap: 10px;
+}
+.note {
+  margin: 22px 0 0;
+  font-size: 20px;
+  transform: rotate(-2deg);
+  color: var(--paper-3);
+}

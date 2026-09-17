@@ -1,0 +1,49 @@
+[package]
+name = "feedback"
+version = "0.1.0"
+description = "FEEDBACK — local-first music and music-video player"
+authors = ["nops"]
+edition = "2021"
+rust-version = "1.80"
+
+[lib]
+name = "feedback_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6", features = [] }
+
+[dependencies]
+tauri = { version = "2.11", features = [] }
+tauri-plugin-dialog = "2.7"
+tauri-plugin-opener = "2.5"
+tauri-plugin-log = "2.9"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+log = "0.4"
+rusqlite = { version = "0.40", features = ["bundled"] }
+lofty = "0.25"
+walkdir = "2.5"
+notify = "8.2"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "gif", "bmp"] }
+blake3 = "1.8"
+rayon = "1.12"
+parking_lot = "0.12"
+percent-encoding = "2.3"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-single-instance = "2.4"
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+opt-level = 3
+strip = true
+panic = "unwind"
+
+[profile.dev.package."*"]
+opt-level = 2

@@ -1,0 +1,112 @@
+/* FEEDBACK design tokens. Default theme: "Basement" — worn black, paper, chrome, a little red. */
+:root {
+  /* ink (backgrounds, darkest → lightest) */
+  --ink-0: #050505;
+  --ink-1: #0b0b0b;
+  --ink-2: #101010;
+  --ink-3: #161616;
+  --ink-4: #1d1d1d;
+  --ink-5: #262626;
+
+  /* lines */
+  --line-1: #1f1f1f;
+  --line-2: #2c2c2c;
+  --line-3: #3a3a3a;
+
+  /* paper (text) */
+  --paper-1: #e6e1d6;
+  --paper-2: #a9a49a;
+  --paper-3: #6f6c66;
+  --paper-4: #4a4845;
+
+  /* metal + signal */
+  --chrome: #a7a7a7;
+  --chrome-dim: #6b6b6b;
+  --red: #ff2a3a;
+  --red-soft: #e2323f;
+  --burgundy: #8b0f1a;
+  --wine: #3b0a10;
+
+  /* state */
+  --ok: #8fb58a;
+  --warn: #d6a84a;
+  --error: #ff4b57;
+
+  /* ambient (overwritten from artwork) */
+  --ambient-a: #3a1016;
+  --ambient-b: #141414;
+
+  /* type */
+  --font-ui: "Inter Variable", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Archivo Variable", "Archivo", "Arial Black", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
+  --font-hand: "Covered By Your Grace", "Segoe Print", cursive;
+
+  --fs-2xs: 10px;
+  --fs-xs: 11px;
+  --fs-sm: 12.5px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 28px;
+  --fs-3xl: 40px;
+  --fs-4xl: 60px;
+  --fs-5xl: 88px;
+
+  --track-label: 0.18em;
+  --track-display: -0.01em;
+
+  /* space (4px base) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+  --s-20: 80px;
+
+  /* radius: mostly square. Jewel cases have tiny radii, not pills. */
+  --r-0: 0;
+  --r-1: 2px;
+  --r-2: 4px;
+  --r-3: 8px;
+
+  /* elevation */
+  --shadow-1: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-art: 0 18px 48px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.5);
+  --shadow-pop: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--line-2);
+
+  /* motion */
+  --t-micro: 140ms;
+  --t-ui: 240ms;
+  --t-edit: 560ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.7, 0, 0.2, 1);
+  --ease-snap: cubic-bezier(0.3, 1.4, 0.4, 1);
+
+  /* layout */
+  --titlebar-h: 36px;
+  --shelf-w: 236px;
+  --shelf-w-collapsed: 64px;
+  --transport-h: 88px;
+  --queue-w: 360px;
+
+  --z-shelf: 10;
+  --z-transport: 30;
+  --z-nowplaying: 40;
+  --z-menu: 60;
+  --z-toast: 70;
+  --z-intro: 100;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --t-micro: 1ms;
+    --t-ui: 1ms;
+    --t-edit: 1ms;
+  }
+}
