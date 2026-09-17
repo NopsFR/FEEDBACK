@@ -1,0 +1,67 @@
+.wrap {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  padding: calc(env(safe-area-inset-top) + 48px) 24px calc(env(safe-area-inset-bottom) + 24px);
+  background: radial-gradient(90% 50% at 0% 0%, rgba(139, 15, 26, 0.35), transparent 70%), var(--ink-1);
+}
+.mark {
+  width: min(78vw, 360px);
+  height: auto;
+  color: var(--paper-1);
+}
+.line {
+  margin: 6px 0 44px 12px;
+  font-size: 22px;
+  transform: rotate(-2deg);
+}
+.title {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-stretch: 125%;
+  font-weight: 880;
+  font-size: 34px;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+.body {
+  color: var(--paper-2);
+  line-height: 1.55;
+  max-width: 420px;
+}
+.body b {
+  color: var(--paper-1);
+  font-weight: 560;
+}
+.form {
+  display: flex;
+  gap: 10px;
+  margin-top: 26px;
+  align-items: stretch;
+}
+.code {
+  width: 180px;
+  height: 52px;
+  padding: 0 12px;
+  background: var(--ink-0);
+  border: 1px solid var(--line-3);
+  color: var(--paper-1);
+  font: 500 28px var(--font-mono);
+  letter-spacing: 0.2em;
+  border-radius: var(--r-1);
+}
+.form button {
+  height: 52px;
+}
+.err {
+  margin-top: 14px;
+  color: var(--error);
+}
+.tip {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-2);
+  color: var(--paper-3);
+  font-size: 14px;
+  line-height: 1.5;
+}

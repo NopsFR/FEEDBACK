@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useUi, type MenuItem } from "@/state/ui";
 import { Icon } from "./Icon";
+import { openActionSheet } from "./ActionSheet";
 import s from "./ContextMenu.module.css";
 
 function MenuList({ items, x, y, onClose, depth = 0 }: { items: MenuItem[]; x: number; y: number; onClose: () => void; depth?: number }) {
@@ -133,13 +134,17 @@ export function ContextMenuHost() {
 }
 
 /** Helper for onContextMenu / "more" buttons */
-export function openMenuAt(e: { clientX: number; clientY: number; preventDefault?: () => void; stopPropagation?: () => void }, items: MenuItem[]) {
+const touchLayout = () => window.matchMedia("(max-width: 760px), (pointer: coarse)").matches;
+
+export function openMenuAt(e: { clientX: number; clientY: number; preventDefault?: () => void; stopPropagation?: () => void }, items: MenuItem[], title = "") {
   e.preventDefault?.();
   e.stopPropagation?.();
+  if (touchLayout()) return openActionSheet(title, items);
   useUi.getState().openMenu(e.clientX, e.clientY, items);
 }
 
-export function openMenuFrom(el: HTMLElement, items: MenuItem[]) {
+export function openMenuFrom(el: HTMLElement, items: MenuItem[], title = "") {
+  if (touchLayout()) return openActionSheet(title, items);
   const r = el.getBoundingClientRect();
   useUi.getState().openMenu(r.left, r.bottom + 4, items);
 }

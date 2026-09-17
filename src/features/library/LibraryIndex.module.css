@@ -1,0 +1,54 @@
+.list {
+  list-style: none;
+  margin: 0 0 32px;
+  padding: 0;
+  border-top: 1px solid var(--line-1);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  height: 58px;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--line-1);
+  font-family: var(--font-display);
+  font-stretch: 115%;
+  font-weight: 750;
+  font-size: 19px;
+  text-transform: uppercase;
+  letter-spacing: -0.005em;
+  text-align: left;
+  color: var(--paper-1);
+}
+.row svg:first-child {
+  color: var(--paper-3);
+}
+.row span {
+  flex: 1;
+}
+.chev {
+  color: var(--paper-4);
+}
+.row:active {
+  background: var(--ink-3);
+}
+.recent :global(.label) {
+  margin-bottom: 12px;
+}
+.pls {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.pl {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  font-weight: 520;
+  min-width: 0;
+}
+.plArt {
+  width: 100%;
+}

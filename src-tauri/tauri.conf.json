@@ -6,7 +6,7 @@
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
+    "beforeBuildCommand": "pnpm build && pnpm build:pwa",
     "frontendDist": "../dist"
   },
   "app": {
@@ -65,6 +65,9 @@
         "headerImage": "installer/nsis-header.bmp",
         "sidebarImage": "installer/nsis-sidebar.bmp"
       }
+    },
+    "resources": {
+      "../dist-pwa/": "pwa/"
     }
   }
 }

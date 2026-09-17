@@ -44,6 +44,22 @@
   display: flex;
   justify-content: flex-end;
 }
+@media (max-width: 760px) {
+  .row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .rowControl {
+    justify-content: flex-start;
+  }
+  .bands {
+    gap: 2px;
+    padding: 16px 6px 10px;
+  }
+  .band input {
+    height: 110px;
+  }
+}
 .muted {
   color: var(--paper-3);
   font-size: var(--fs-sm);
@@ -206,4 +222,39 @@
 }
 .link:hover {
   color: var(--paper-1);
+}
+.devices {
+  padding-bottom: 12px;
+}
+.lan {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 28px;
+  padding: 20px;
+  margin: 8px 0;
+  background: var(--ink-2);
+  border-left: 2px solid var(--burgundy);
+}
+.lanSteps :global(.label) {
+  margin: 0 0 6px;
+}
+.url {
+  margin: 0 0 4px;
+  color: var(--paper-1);
+  font-size: 13px;
+  user-select: text;
+}
+.code {
+  margin: 4px 0 12px;
+  font: 500 40px var(--font-mono);
+  letter-spacing: 0.12em;
+  color: var(--paper-1);
+}
+.qr {
+  width: 200px;
+}
+.qr svg {
+  width: 200px;
+  height: 200px;
+  display: block;
 }

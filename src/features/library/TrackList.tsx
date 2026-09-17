@@ -11,6 +11,7 @@ import { Artwork } from "@/components/Artwork";
 import { Playing } from "@/components/Playing";
 import { duration } from "@/lib/format";
 import { toggleFavourite, trackMenu } from "./actions";
+import { useLongPress } from "@/lib/useLongPress";
 import s from "./TrackList.module.css";
 
 export type Column = "index" | "art" | "title" | "album" | "plays" | "added" | "duration" | "fav";
@@ -274,8 +275,10 @@ interface RowProps {
 
 const Row = memo(function Row({ t, i, top, columns, number, selected, current, playing, fav, dropBefore, dropAfter, hideArtist, onClick, onDouble, onContext, onDragStart, onDragOver }: RowProps) {
   const go = useNav((n) => n.go);
+  const long = useLongPress((x, y) => onContext({ clientX: x, clientY: y, preventDefault() {}, stopPropagation() {} } as unknown as MouseEvent, i));
   return (
     <div
+      {...long}
       role="row"
       aria-selected={selected}
       className={`${s.row} ${selected ? s.selected : ""} ${current ? s.current : ""} ${t.missing ? s.missing : ""} ${dropBefore ? s.dropBefore : ""} ${dropAfter ? s.dropAfter : ""}`}

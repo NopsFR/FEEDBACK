@@ -10,6 +10,12 @@
   z-index: var(--z-toast);
   pointer-events: none;
 }
+@media (max-width: 760px) {
+  .stack {
+    bottom: calc(env(safe-area-inset-bottom) + 138px);
+    width: calc(100vw - 24px);
+  }
+}
 .toast {
   pointer-events: auto;
   display: flex;

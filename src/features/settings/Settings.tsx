@@ -18,6 +18,8 @@ import { Wordmark } from "@/components/Wordmark";
 import { EQ_FREQS, EQ_PRESETS } from "@/features/player/engine";
 import { Page, PageHead } from "@/features/library/Page";
 import { chooseMusicFiles, chooseMusicFolder } from "@/features/library/importMusic";
+import { Devices } from "./Devices";
+import { getToken as _gt, setToken } from "@/services/platform";
 import s from "./Settings.module.css";
 
 function Group({ id, n, title, children }: { id: string; n: string; title: string; children: ReactNode }) {
@@ -178,14 +180,28 @@ export function Settings({ section }: { section?: string }) {
     <Page>
       <PageHead label="FEEDBACK" title="Settings" />
       <div className={s.layout}>
-        <Group id="library" n="01" title="Library">
+        {!isTauri && (
+          <Group id="phone" n="00" title="This phone">
+            <Row label="Paired with your computer" hint="Browsing and streaming need the same Wi-Fi as the computer. Saved albums play anywhere.">
+              <Button variant="secondary" onClick={() => { setToken(null); location.reload(); }} disabled={!_gt()}>
+                Unpair
+              </Button>
+            </Row>
+          </Group>
+        )}
+        {isTauri && <Group id="library" n="01" title="Library">
           <Folders />
           <Row label="Drag and drop" hint="Drop folders onto the window to add them. Drop files and they're copied into a “FEEDBACK Imports” folder in Music.">
             <span className={s.muted}>Always on</span>
           </Row>
-        </Group>
+        </Group>}
+        {isTauri && (
+          <Group id="devices" n="02" title="Devices">
+            <Devices />
+          </Group>
+        )}
 
-        <Group id="playback" n="02" title="Playback">
+        <Group id="playback" n="03" title="Playback">
           <Row label="Volume levelling" hint="Uses ReplayGain tags when files have them. Album mode keeps quiet songs quiet.">
             <Segmented<ReplayGainMode> label="ReplayGain" value={st.replayGain} onChange={(v) => st.set("replayGain", v)} options={[{ value: "off", label: "Off" }, { value: "track", label: "Track" }, { value: "album", label: "Album" }]} />
           </Row>
@@ -202,11 +218,11 @@ export function Settings({ section }: { section?: string }) {
           </Row>
         </Group>
 
-        <Group id="audio" n="03" title="Equaliser">
+        <Group id="audio" n="04" title="Equaliser">
           <Equaliser />
         </Group>
 
-        <Group id="appearance" n="04" title="Look & feel">
+        <Group id="appearance" n="05" title="Look & feel">
           <Row label="Colour from artwork" hint="Let the album cover tint Now Playing and album pages.">
             <Toggle on={st.ambientArtwork} onChange={(v) => st.set("ambientArtwork", v)} label="Colour from artwork" />
           </Row>
@@ -215,7 +231,7 @@ export function Settings({ section }: { section?: string }) {
           </Row>
         </Group>
 
-        <Group id="startup" n="05" title="Startup">
+        <Group id="startup" n="06" title="Startup">
           <Row label="Intro" hint="Full plays the sequence, fast is a quick flash of the mark, off goes straight in. The app loads underneath either way.">
             <Segmented<IntroMode> label="Intro" value={st.intro} onChange={(v) => st.set("intro", v)} options={[{ value: "full", label: "Full" }, { value: "fast", label: "Fast" }, { value: "off", label: "Off" }]} />
           </Row>
@@ -224,7 +240,7 @@ export function Settings({ section }: { section?: string }) {
           </Row>
         </Group>
 
-        <Group id="about" n="06" title="About">
+        <Group id="about" n="07" title="About">
           <div className={s.about}>
             <Wordmark className={s.aboutMark} />
             <p className={`hand ${s.aboutLine}`}>music people repeat.</p>

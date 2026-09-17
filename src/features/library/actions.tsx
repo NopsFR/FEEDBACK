@@ -8,6 +8,8 @@ import { useLibrary } from "@/state/library";
 import { useNav } from "@/state/nav";
 import { toast, toastError, type MenuItem } from "@/state/ui";
 import { isTauri } from "@/services/platform";
+import * as offline from "@/services/offline";
+import { bytes } from "@/lib/format";
 
 const I = (n: Parameters<typeof Icon>[0]["name"]) => <Icon name={n} size={16} />;
 
@@ -150,6 +152,15 @@ export function albumMenu(album: Album): MenuItem[] {
       toastError(e);
     }
   };
+  const saved = !isTauri && offline.savedAlbumIds().includes(album.id);
+  const offlineItems: MenuItem[] = isTauri
+    ? []
+    : [
+        { label: "", separator: true },
+        saved
+          ? { label: "Remove from this phone", icon: I("trash"), run: () => offline.removeAlbum(album.id).then(() => toast("Removed from this phone.")).catch(toastError) }
+          : { label: "Save to this phone", icon: I("import"), run: () => saveAlbumOffline(album.id) },
+      ];
   return [
     { label: "Play", icon: I("play"), run: () => playAlbum(album) },
     { label: "Shuffle", icon: I("shuffle"), run: () => playAlbum(album, { shuffle: true }) },
@@ -158,5 +169,22 @@ export function albumMenu(album: Album): MenuItem[] {
     { label: "Add to playlist", icon: I("playlist"), submenu: playlistSubmenu(async () => (await library.album(album.id)).tracks) },
     { label: "", separator: true },
     ...(album.artistId ? [{ label: `Go to ${album.artist}`, icon: I("artists"), run: () => nav.go({ name: "artist", id: album.artistId! }) }] : []),
+    ...offlineItems,
   ];
+}
+
+export async function saveAlbumOffline(albumId: number) {
+  try {
+    const d = await library.album(albumId);
+    const size = d.tracks.reduce((a, t) => a + t.fileSize, 0);
+    const info = await offline.storageInfo();
+    if (!info.secure) return toast("Saving needs the secure (https) address — see the setup page on your computer.", "error");
+    if (info.quota && info.usage + size > info.quota * 0.9) return toast(`Not enough space allowed for ${bytes(size)}.`, "error");
+    if (size > 150 * 1024 * 1024 && !(await confirmAction("Save album", `“${d.album.title}” is ${bytes(size)}. Use Wi-Fi for this.`, "Save"))) return;
+    toast(`Saving “${d.album.title}” (${bytes(size)})…`);
+    await offline.saveAlbum(d);
+    toast(`“${d.album.title}” is on this phone.`);
+  } catch (e) {
+    toastError(e);
+  }
 }

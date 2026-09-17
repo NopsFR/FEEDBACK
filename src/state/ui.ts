@@ -34,6 +34,8 @@ interface UiState {
   toggleShelf: () => void;
   dialog: ReactNode | null;
   setDialog: (d: ReactNode | null) => void;
+  sheet: ReactNode | null;
+  setSheet: (d: ReactNode | null) => void;
 }
 
 let tid = 1;
@@ -56,6 +58,8 @@ export const useUi = create<UiState>((set, get) => ({
   toggleShelf: () => set({ shelfCollapsed: !get().shelfCollapsed }),
   dialog: null,
   setDialog: (d) => set({ dialog: d }),
+  sheet: null,
+  setSheet: (d) => set({ sheet: d }),
 }));
 
 export const toast = (message: string, tone: Toast["tone"] = "info", action?: Toast["action"]) => useUi.getState().toast({ message, tone, action });

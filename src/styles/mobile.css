@@ -1,0 +1,15 @@
+/* Phone layout adjustments shared by pages. The shell itself lives in app/mobile. */
+@media (max-width: 760px) {
+  :root {
+    --fs-md: 15px;
+  }
+  body {
+    -webkit-text-size-adjust: 100%;
+  }
+  main {
+    scrollbar-width: none;
+  }
+  main::-webkit-scrollbar {
+    display: none;
+  }
+}

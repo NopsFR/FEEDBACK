@@ -198,6 +198,32 @@
 .dice:hover {
   color: var(--paper-1);
 }
+@media (max-width: 760px) {
+  .feature {
+    gap: 22px;
+    margin-bottom: 36px;
+    padding-bottom: 28px;
+  }
+  .featureArt {
+    width: min(72vw, 300px);
+    justify-self: center;
+  }
+  .setlist {
+    grid-template-columns: 1fr;
+  }
+  .setItem {
+    grid-template-columns: 22px 42px 1fr 40px;
+  }
+  .setPlays {
+    display: none;
+  }
+  .genre[data-weight="1"] {
+    font-size: 28px;
+  }
+  .masthead {
+    display: none;
+  }
+}
 @media (max-width: 900px) {
   .feature {
     grid-template-columns: 1fr;

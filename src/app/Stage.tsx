@@ -14,6 +14,8 @@ import { Playlists } from "@/features/playlists/Playlists";
 import { PlaylistPage } from "@/features/playlists/PlaylistPage";
 import { Videos } from "@/features/videos/Videos";
 import { Settings } from "@/features/settings/Settings";
+import { LibraryIndex } from "@/features/library/LibraryIndex";
+import { OfflinePage } from "@/features/offline/OfflinePage";
 import s from "./App.module.css";
 
 function View() {
@@ -21,6 +23,10 @@ function View() {
   switch (r.name) {
     case "home":
       return <Home />;
+    case "offline":
+      return <OfflinePage />;
+    case "library":
+      return <LibraryIndex />;
     case "search":
       return <Search initial={r.q} />;
     case "albums":

@@ -50,6 +50,18 @@
   gap: 10px;
   margin-top: 22px;
 }
+@media (max-width: 760px) {
+  .head {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .art {
+    width: min(64vw, 260px);
+  }
+  .tools {
+    flex-wrap: wrap;
+  }
+}
 .tools {
   display: flex;
   align-items: center;

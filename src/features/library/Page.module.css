@@ -42,6 +42,17 @@
   gap: 8px;
   align-items: center;
 }
+@media (max-width: 760px) {
+  .page {
+    padding: 52px 16px 40px;
+  }
+  .head {
+    margin-bottom: 22px;
+  }
+  .title {
+    font-size: clamp(30px, 11vw, 48px);
+  }
+}
 .loading {
   display: flex;
   gap: 6px;

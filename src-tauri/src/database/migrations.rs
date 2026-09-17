@@ -120,6 +120,17 @@ const MIGRATIONS: &[&str] = &[
     r#"
     UPDATE track SET mtime = 0 WHERE lower(path) LIKE '%.m4a' OR lower(path) LIKE '%.mp4';
     "#,
+    // 3 — paired devices for the optional LAN server
+    r#"
+    CREATE TABLE device (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        token_hash TEXT NOT NULL UNIQUE,
+        created_at INTEGER NOT NULL,
+        last_seen_at INTEGER,
+        revoked INTEGER NOT NULL DEFAULT 0
+    );
+    "#,
 ];
 
 pub fn run(conn: &mut Connection) -> rusqlite::Result<()> {

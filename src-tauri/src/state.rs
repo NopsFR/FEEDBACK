@@ -19,4 +19,5 @@ pub struct AppState {
     pub scan: Mutex<ScanControl>,
     pub watcher: Mutex<Option<FolderWatcher>>,
     pub imports_dir: PathBuf,
+    pub lan: Mutex<Option<crate::sync::server::Running>>,
 }

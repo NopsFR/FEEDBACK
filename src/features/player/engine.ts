@@ -5,6 +5,7 @@
  * The engine knows nothing about queues; the player store drives it.
  */
 import { log } from "@/lib/log";
+import { isIOS } from "@/services/platform";
 
 export const EQ_FREQS = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 
@@ -104,6 +105,7 @@ export class AudioEngine {
 
   /** Create the AudioContext lazily (browsers require a gesture; desktop allows autoplay). */
   private ensureGraph() {
+    if (isIOS) return; // iOS suspends Web Audio in the background; plain <audio> keeps lock-screen playback alive
     if (this.ctx) {
       if (this.ctx.state === "suspended") void this.ctx.resume();
       return;

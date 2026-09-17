@@ -15,10 +15,15 @@ import { importDropped } from "@/features/library/importMusic";
 import { ContextMenuHost } from "@/components/ContextMenu";
 import { DialogHost } from "@/components/Dialog";
 import { Toasts } from "@/components/Toasts";
+import { SheetHost } from "@/components/ActionSheet";
+import { MobileShell } from "./mobile/MobileShell";
+import { useIsMobile } from "@/lib/useMedia";
 import { Icon } from "@/components/Icon";
 import { useLibrary } from "@/state/library";
 import { useSettings } from "@/state/settings";
-import { isTauri } from "@/services/platform";
+import { getToken, isTauri, setToken } from "@/services/platform";
+import { PairScreen } from "@/features/offline/PairScreen";
+import * as offline from "@/services/offline";
 import type { ScanProgress } from "@/services/types";
 import { log } from "@/lib/log";
 import s from "./App.module.css";
@@ -63,35 +68,60 @@ function useDropImport() {
 
 export function App() {
   const [booted, setBooted] = useState(false);
+  const [paired, setPaired] = useState(() => isTauri || !!getToken());
   const introMode = useSettings((st) => st.intro);
   const [introDone, setIntroDone] = useState(introMode === "off");
   useBackendEvents();
   useShortcuts();
   const dropping = useDropImport();
+  const mobile = useIsMobile();
 
   useEffect(() => {
+    if (!paired) return;
     // Load everything in parallel with the intro — the intro never delays readiness.
-    Promise.allSettled([useSettings.getState().load(), useLibrary.getState().loadOverview(), useLibrary.getState().loadPlaylists()])
+    Promise.allSettled([isTauri ? Promise.resolve() : offline.init(), useSettings.getState().load(), useLibrary.getState().loadOverview(), useLibrary.getState().loadPlaylists()])
       .then(() => usePlayer.getState().restore())
       .catch((e) => log.error("UI", "boot", e))
       .finally(() => setBooted(true));
+  }, [paired]);
+
+  useEffect(() => {
+    if (isTauri) return;
+    const onUnpaired = () => {
+      setToken(null);
+      setPaired(false);
+    };
+    window.addEventListener("feedback:unpaired", onUnpaired);
+    if ("serviceWorker" in navigator && window.isSecureContext && !import.meta.env.DEV) {
+      navigator.serviceWorker.register("/sw.js").catch((e) => log.warn("UI", "service worker", e));
+    }
+    return () => window.removeEventListener("feedback:unpaired", onUnpaired);
   }, []);
+
+  if (!paired) return <PairScreen onPaired={() => setPaired(true)} />;
 
   return (
     <div className={`${s.app} grain`}>
-      {isTauri && <Titlebar />}
-      <div className={s.body}>
-        <Shelf />
-        <div className={s.center}>
-          <Stage />
-          <NowPlaying />
-        </div>
-        <QueuePanel />
-      </div>
-      <Transport />
+      {mobile ? (
+        <MobileShell />
+      ) : (
+        <>
+          {isTauri && <Titlebar />}
+          <div className={s.body}>
+            <Shelf />
+            <div className={s.center}>
+              <Stage />
+              <NowPlaying />
+            </div>
+            <QueuePanel />
+          </div>
+          <Transport />
+        </>
+      )}
       <VideoPlayer />
       <ContextMenuHost />
       <DialogHost />
+      <SheetHost />
       <Toasts />
       {dropping && (
         <div className={s.drop}>

@@ -78,4 +78,7 @@ export const tauriLibrary: LibraryService = {
   removeTracks: (ids) => call("remove_tracks", { ids }),
 };
 
-export const library: LibraryService = tauriLibrary;
+import { isTauri } from "./platform";
+import { remoteLibrary } from "./remote";
+
+export const library: LibraryService = isTauri ? tauriLibrary : remoteLibrary;

@@ -5,6 +5,7 @@ mod library;
 mod media;
 mod metadata;
 mod state;
+mod sync;
 mod transcode;
 
 use state::{AppState, ScanControl};
@@ -63,6 +64,7 @@ pub fn run() {
                 scan: parking_lot::Mutex::new(ScanControl::default()),
                 watcher: parking_lot::Mutex::new(None),
                 imports_dir,
+                lan: parking_lot::Mutex::new(None),
             });
             let handle = app.handle().clone();
             // Watch folders + a quiet incremental rescan shortly after launch.
@@ -70,6 +72,7 @@ pub fn run() {
                 std::thread::sleep(std::time::Duration::from_millis(1500));
                 commands::restart_watcher(&handle);
                 commands::start_scan_inner(&handle);
+                commands::lan_autostart(&handle);
             });
             Ok(())
         })
@@ -109,6 +112,10 @@ pub fn run() {
             commands::track_file_path,
             commands::get_lyrics,
             commands::remove_tracks,
+            commands::lan_status,
+            commands::lan_set_enabled,
+            commands::lan_new_code,
+            commands::lan_revoke,
         ])
         .run(tauri::generate_context!())
         .expect("error while running FEEDBACK");

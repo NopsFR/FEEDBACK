@@ -56,6 +56,21 @@
 .row:hover {
   background: rgba(255, 255, 255, 0.03);
 }
+@media (max-width: 760px) {
+  .row {
+    grid-template-columns: 44px 1fr auto;
+    gap: 12px;
+  }
+  .row > :last-child {
+    display: none;
+  }
+  .name {
+    font-size: 17px;
+  }
+  .jump {
+    display: none;
+  }
+}
 .art {
   width: 48px;
 }

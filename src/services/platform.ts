@@ -12,11 +12,39 @@ export const modKey = isMac || isIOS ? "⌘" : "Ctrl";
 /** Base URL for the fbmedia custom protocol. Windows/Android WebViews use http://<scheme>.localhost. */
 export const mediaBase = isWindows || isAndroid ? "http://fbmedia.localhost" : "fbmedia://localhost";
 
+// ---- PWA mode: media comes from the paired desktop (or from on-device offline storage) ----
+const TOKEN_KEY = "feedback.token";
+export function getToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+export function setToken(t: string | null) {
+  try {
+    if (t) localStorage.setItem(TOKEN_KEY, t);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+/** Offline blob URLs registered by the offline store (track id → object URL). */
+export const offlineUrls = new Map<number, string>();
+export const offlineArt = new Map<string, string>();
+
 export function trackUrl(id: number): string {
-  return `${mediaBase}/track/${id}`;
+  if (isTauri) return `${mediaBase}/track/${id}`;
+  const local = offlineUrls.get(id);
+  if (local) return local;
+  return `${location.origin}/media/track/${id}?t=${encodeURIComponent(getToken() ?? "")}`;
 }
 
 export function artUrl(hash: string | null | undefined, size: 160 | 480 | 0 = 480): string | null {
   if (!hash) return null;
-  return `${mediaBase}/art/${hash}/${size}`;
+  if (isTauri) return `${mediaBase}/art/${hash}/${size}`;
+  const local = offlineArt.get(`${hash}/${size === 0 ? 480 : size}`);
+  if (local) return local;
+  return `${location.origin}/media/art/${hash}/${size}?t=${encodeURIComponent(getToken() ?? "")}`;
 }

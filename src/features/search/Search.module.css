@@ -170,6 +170,15 @@
 .chip:hover {
   box-shadow: inset 0 0 0 1px var(--paper-2);
 }
+@media (max-width: 760px) {
+  .box {
+    margin-bottom: 22px;
+    padding-top: 0;
+  }
+  .input {
+    font-size: 26px;
+  }
+}
 @media (max-width: 1000px) {
   .top {
     grid-template-columns: 1fr;

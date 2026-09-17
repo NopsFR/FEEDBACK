@@ -2,6 +2,8 @@ import { create } from "zustand";
 
 export type Route =
   | { name: "home" }
+  | { name: "library" }
+  | { name: "offline" }
   | { name: "search"; q?: string }
   | { name: "albums" }
   | { name: "album"; id: number }

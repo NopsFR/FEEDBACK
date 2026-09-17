@@ -333,3 +333,92 @@ pub async fn remove_tracks(app: AppHandle, state: S<'_>, ids: Vec<i64>) -> AppRe
     let _ = app.emit("library-changed", ());
     Ok(())
 }
+
+// ---------- LAN server (phone access) ----------
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LanStatus {
+    pub enabled: bool,
+    pub running: bool,
+    pub urls: Vec<String>,
+    pub setup_url: String,
+    pub qr_svg: Option<String>,
+    pub devices: Vec<crate::sync::DeviceRow>,
+    pub pwa_bundled: bool,
+}
+
+fn pwa_dir(app: &AppHandle) -> Option<PathBuf> {
+    let bundled = app.path().resource_dir().ok().map(|d| d.join("pwa")).filter(|d| d.join("index.html").is_file());
+    bundled.or_else(|| {
+        let dev = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..").join("dist-pwa");
+        dev.join("index.html").is_file().then_some(dev)
+    })
+}
+
+fn qr_svg(data: &str) -> Option<String> {
+    let code = qrcode::QrCode::new(data.as_bytes()).ok()?;
+    Some(code.render::<qrcode::render::svg::Color>().min_dimensions(200, 200).dark_color(qrcode::render::svg::Color("#0b0b0b")).light_color(qrcode::render::svg::Color("#e6e1d6")).build())
+}
+
+fn lan_snapshot(app: &AppHandle) -> AppResult<LanStatus> {
+    let state = app.state::<AppState>();
+    let enabled = state.db.with(mutate::settings)?.get("lan.enabled").and_then(|v| v.as_bool()).unwrap_or(false);
+    let devices = state.db.with(crate::sync::devices)?;
+    let guard = state.lan.lock();
+    let (running, urls, setup_url) = match guard.as_ref() {
+        Some(r) => (true, r.urls.clone(), r.setup_url.clone()),
+        None => (false, vec![], String::new()),
+    };
+    Ok(LanStatus { enabled, running, qr_svg: if setup_url.is_empty() { None } else { qr_svg(&setup_url) }, urls, setup_url, devices, pwa_bundled: pwa_dir(app).is_some() })
+}
+
+#[tauri::command]
+pub async fn lan_status(app: AppHandle) -> AppResult<LanStatus> {
+    lan_snapshot(&app)
+}
+
+async fn lan_start(app: &AppHandle) -> AppResult<()> {
+    if app.state::<AppState>().lan.lock().is_some() {
+        return Ok(());
+    }
+    let running = crate::sync::server::start(app.clone(), crate::sync::DEFAULT_PORT, pwa_dir(app)).await.map_err(|e| {
+        log::error!(target: "SYNC", "start failed: {e}");
+        AppError::User("Couldn't start the phone server. Another app may be using port 47821.".into())
+    })?;
+    *app.state::<AppState>().lan.lock() = Some(running);
+    Ok(())
+}
+
+pub fn lan_autostart(app: &AppHandle) {
+    let enabled = app.state::<AppState>().db.with(mutate::settings).ok().and_then(|s| s.get("lan.enabled").and_then(|v| v.as_bool())).unwrap_or(false);
+    if enabled {
+        let app = app.clone();
+        tauri::async_runtime::spawn(async move {
+            let _ = lan_start(&app).await;
+        });
+    }
+}
+
+#[tauri::command]
+pub async fn lan_set_enabled(app: AppHandle, enabled: bool) -> AppResult<LanStatus> {
+    app.state::<AppState>().db.with(|c| mutate::set_setting(c, "lan.enabled", &serde_json::Value::Bool(enabled)))?;
+    if enabled {
+        lan_start(&app).await?;
+    } else if let Some(r) = app.state::<AppState>().lan.lock().take() {
+        r.stop();
+    }
+    lan_snapshot(&app)
+}
+
+#[tauri::command]
+pub async fn lan_new_code(state: S<'_>) -> AppResult<String> {
+    let guard = state.lan.lock();
+    let r = guard.as_ref().ok_or_else(|| AppError::User("Turn on phone access first.".into()))?;
+    Ok(r.new_code())
+}
+
+#[tauri::command]
+pub async fn lan_revoke(app: AppHandle, id: i64) -> AppResult<LanStatus> {
+    app.state::<AppState>().db.with(|c| crate::sync::revoke_device(c, id))?;
+    lan_snapshot(&app)
+}
