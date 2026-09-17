@@ -27,6 +27,7 @@
 - [x] Now Playing disc mode: existing GLB loaded on demand with the sleeve screen-printed onto the label, pauses with playback, respects reduced motion, and falls back to artwork when WebGL or the chunk is unavailable
 - [x] Phone QA at 320/360/390/430 and landscape: the touch shell now covers short viewports, Now Playing reflows beside the artwork, empty states stop clipping
 - [x] PWA offline shell survives releases: the service worker caches the entry scripts on install, refreshes them from each navigation and retires only the assets the previous build referenced
+- [x] Find artwork online: opt-in MusicBrainz release match plus Cover Art Archive sleeves, rate-limited and metadata-only, applied to FEEDBACK's artwork cache without touching the files (live service check runs with `cargo test -- --ignored`)
 
 ## Open
 - [~] iPhone: test on a real device (certificate trust, Home Screen install, lock-screen playback) — see MOBILE.md checklist

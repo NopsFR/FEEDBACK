@@ -108,6 +108,18 @@ export interface PlaylistDetail {
   entries: { entryId: Id; track: Track }[];
 }
 
+export interface LookupCandidate {
+  mbid: string;
+  title: string;
+  artist: string;
+  date: string | null;
+  country: string | null;
+  label: string | null;
+  trackCount: number | null;
+  format: string | null;
+  thumb: string | null;
+}
+
 export interface SearchResult {
   tracks: Track[];
   albums: Album[];

@@ -20,6 +20,8 @@ export interface Settings {
   resumeOnLaunch: boolean;
   reducedMotion: "system" | "on" | "off";
   mobileData: "wifi" | "any";
+  /** Opt-in catalogue lookups (MusicBrainz / Cover Art Archive). Metadata only. */
+  onlineLookups: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -37,6 +39,7 @@ export const DEFAULT_SETTINGS: Settings = {
   resumeOnLaunch: false,
   reducedMotion: "system",
   mobileData: "wifi",
+  onlineLookups: false,
 };
 
 const LOCAL_KEY = "feedback.settings.v1";

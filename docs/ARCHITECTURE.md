@@ -72,6 +72,12 @@ version; a conflict produces a separate phone copy. Conflicting deletes stay pen
 queued order when reconnecting. Audio remains in the opt-in offline store. Browsed track metadata persisted alongside
 edits is bounded; storage failures leave the previous saved state intact and surface an error.
 
+Catalogue lookups (`metadata/lookup.rs`) are opt-in and off by default (`settings.onlineLookups`, checked in Rust, not
+just in the UI). "Find artwork online…" sends one album's title and artist to MusicBrainz, then fetches the matching
+sleeve from the Cover Art Archive; requests carry an identifying user agent and are throttled to one per second. These
+are metadata services: no audio is ever requested from them, results are never presented as playable, and the artwork is
+stored in FEEDBACK's own cache — the audio files are not modified.
+
 The PWA service worker (`public/sw.js`) caches the app shell only. Install pre-caches the entry scripts parsed out of
 `index.html`; every successful navigation re-adopts the served document, adds its scripts and deletes only the assets the
 previous build listed in `/__shell-manifest`, so a release can't leave the phone on a stale bundle and lazy chunks survive.

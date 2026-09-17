@@ -490,6 +490,59 @@ pub async fn set_album_art(app: AppHandle, state: S<'_>, album_id: i64, image_pa
     Ok(Some(hash))
 }
 
+// ---------- catalogue lookups (opt-in, metadata only) ----------
+
+/// True when the user has switched online lookups on in Settings.
+fn lookups_allowed(state: &S<'_>) -> AppResult<bool> {
+    let settings = state.db.with(mutate::settings)?;
+    Ok(settings.get("settings.onlineLookups").and_then(|v| v.as_bool()).unwrap_or(false))
+}
+
+/// Candidate releases for an album, from MusicBrainz, with Cover Art Archive previews.
+/// Nothing leaves the machine unless the user runs this on a specific album.
+#[tauri::command]
+pub async fn lookup_album(state: S<'_>, album_id: i64) -> AppResult<Vec<crate::metadata::lookup::Candidate>> {
+    if !lookups_allowed(&state)? {
+        return Err(AppError::User("Turn on online lookups in Settings first.".into()));
+    }
+    let album = state.db.with(|c| query::album(c, album_id))?.ok_or(AppError::NotFound)?;
+    let (title, artist) = (album.album.title.clone(), album.album.artist.clone());
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut candidates = crate::metadata::lookup::search_release(&artist, &title, 5).map_err(AppError::User)?;
+        for candidate in candidates.iter_mut() {
+            if let Ok(bytes) = crate::metadata::lookup::cover_art(&candidate.mbid, 250) {
+                candidate.thumb = Some(crate::metadata::lookup::data_url(&bytes));
+            }
+        }
+        // A release with no sleeve on file is no use for artwork; keep the rest in order.
+        candidates.retain(|c| c.thumb.is_some());
+        Ok(candidates)
+    })
+    .await
+    .map_err(|_| AppError::User("The lookup was interrupted.".into()))?
+}
+
+/// Store the chosen sleeve in FEEDBACK's artwork cache. The audio files are never modified.
+#[tauri::command]
+pub async fn apply_lookup_art(app: AppHandle, state: S<'_>, album_id: i64, mbid: String) -> AppResult<Option<String>> {
+    if !lookups_allowed(&state)? {
+        return Err(AppError::User("Turn on online lookups in Settings first.".into()));
+    }
+    let bytes = tauri::async_runtime::spawn_blocking(move || crate::metadata::lookup::cover_art(&mbid, 1200).or_else(|_| crate::metadata::lookup::cover_art(&mbid, 500)))
+        .await
+        .map_err(|_| AppError::User("The download was interrupted.".into()))?
+        .map_err(AppError::User)?;
+    let hash = state.db.with(|c| Ok(state.art.store(c, &bytes, None)))?;
+    let Some(hash) = hash else { return Err(AppError::User("That artwork isn't an image FEEDBACK can read.".into())) };
+    state.db.with(|c| {
+        c.execute("UPDATE album SET artwork_hash = ?2 WHERE id = ?1", rusqlite::params![album_id, hash])?;
+        c.execute("UPDATE track SET artwork_hash = ?2 WHERE album_id = ?1", rusqlite::params![album_id, hash])?;
+        Ok(())
+    })?;
+    let _ = app.emit("library-changed", ());
+    Ok(Some(hash))
+}
+
 // ---------- direct downloads ----------
 #[tauri::command]
 pub async fn download_url(app: AppHandle, state: S<'_>, url: String) -> AppResult<String> {

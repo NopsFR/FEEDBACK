@@ -233,6 +233,9 @@ export function Settings({ section }: { section?: string }) {
           <Row label="Drag and drop" hint="Drop folders onto the window to add them. Drop files and they're copied into a “FEEDBACK Imports” folder in Music.">
             <span className={s.muted}>Always on</span>
           </Row>
+          <Row label="Look up artwork online" hint="Lets “Find artwork online…” ask MusicBrainz and the Cover Art Archive about an album you choose. It sends that album's title and artist, nothing else — no account, no tracking, and no music comes from those services.">
+            <Toggle on={st.onlineLookups} onChange={(v) => st.set("onlineLookups", v)} label="Look up artwork online" />
+          </Row>
         </Group>}
         {isTauri && (
           <Group id="devices" n="02" title="Devices">

@@ -10,6 +10,8 @@ phone app served from your own computer. No account, no ads, no telemetry, no cl
   Unsigned: SmartScreen → *More info → Run anyway*.
 - **Add music:** Home → *Import music*, or drag folders/files onto the window. See `docs/MEDIA_IMPORT.md`.
 - **Phone:** Settings → Devices → turn on phone access, follow the setup page. See `docs/MOBILE.md`.
+- **Missing artwork:** Settings → Library → *Look up artwork online* (off by default), then album menu → *Find artwork online…*.
+  Catalogue data only, from MusicBrainz and the Cover Art Archive.
 
 ## Develop (Windows)
 ```powershell
@@ -35,4 +37,5 @@ Screenshot QA: `docs/ARCHITECTURE.md → Dev loop`.
 
 ## Principles
 Local files stay where they are. Media is served to the UI by id, never by path. Every control does something.
-It never rips, unlocks or downloads from streaming services.
+It never rips, unlocks or downloads from streaming services. Online catalogue lookups are opt-in, cover metadata only,
+and send nothing but the album you asked about.

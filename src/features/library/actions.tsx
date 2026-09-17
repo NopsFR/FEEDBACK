@@ -11,6 +11,7 @@ import { isTauri } from "@/services/platform";
 import * as offline from "@/services/offline";
 import { bytes } from "@/lib/format";
 import { editTracks } from "./MetadataEditor";
+import { findArtwork } from "./ArtworkFinder";
 
 const I = (n: Parameters<typeof Icon>[0]["name"]) => <Icon name={n} size={16} />;
 
@@ -187,7 +188,10 @@ export function albumMenu(album: Album): MenuItem[] {
     { label: "", separator: true },
     ...(album.artistId ? [{ label: `Go to ${album.artist}`, icon: I("artists"), run: () => nav.go({ name: "artist", id: album.artistId! }) }] : []),
     ...(isTauri
-      ? [{ label: "Edit album…", icon: I("edit"), run: async () => editTracks((await library.album(album.id)).tracks, album) } as MenuItem]
+      ? [
+          { label: "Edit album…", icon: I("edit"), run: async () => editTracks((await library.album(album.id)).tracks, album) } as MenuItem,
+          { label: "Find artwork online…", icon: I("albums"), run: () => findArtwork(album) } as MenuItem,
+        ]
       : []),
     ...offlineItems,
   ];

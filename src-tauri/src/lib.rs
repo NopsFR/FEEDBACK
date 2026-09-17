@@ -118,6 +118,8 @@ pub fn run() {
             commands::lan_status,
             commands::edit_tracks,
             commands::set_album_art,
+            commands::lookup_album,
+            commands::apply_lookup_art,
             commands::download_url,
             commands::lan_set_enabled,
             commands::lan_new_code,
