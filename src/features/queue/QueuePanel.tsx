@@ -5,6 +5,11 @@ import { IconButton } from "@/components/IconButton";
 import { Icon } from "@/components/Icon";
 import { Playing } from "@/components/Playing";
 import { openMenuAt } from "@/components/ContextMenu";
+import { promptText } from "@/components/Dialog";
+import { library } from "@/services/library";
+import { useLibrary } from "@/state/library";
+import { useNav } from "@/state/nav";
+import { toast, toastError } from "@/state/ui";
 import { duration, longDuration } from "@/lib/format";
 import { useUi } from "@/state/ui";
 import { trackMenu } from "@/features/library/actions";
@@ -74,11 +79,27 @@ export function QueuePanel() {
   };
   const props = (i: number) => ({ dragging: from === i, over: over === i && from !== i, onDragStart: setFrom, onDragOver: setOver, onDrop: drop });
 
+  /** Keep a queue you like: everything still to play, in order, as a new playlist. */
+  const keep = async () => {
+    const tracks = [cur, ...up].filter(Boolean).map((i) => i!.track);
+    const name = await promptText("Save queue as playlist", { placeholder: "Name", confirm: "Save" });
+    if (!name) return;
+    try {
+      const id = await library.createPlaylist(name, tracks.map((t) => t.id));
+      await useLibrary.getState().loadPlaylists();
+      toast(`Saved ${tracks.length} tracks to “${name}”.`);
+      useNav.getState().go({ name: "playlist", id });
+    } catch (e) {
+      toastError(e);
+    }
+  };
+
   return (
     <aside className={s.panel} aria-label="Queue">
       <header className={s.head}>
         <span className="label">Queue</span>
         <span className={`mono ${s.sum}`}>{up.length ? `${up.length} next · ${longDuration(remaining)}` : ""}</span>
+        {(cur || up.length > 0) && <IconButton icon="playlist" label="Save queue as playlist" size={15} onClick={keep} />}
         <IconButton icon="close" label="Close queue" size={16} onClick={() => toggle(false)} />
       </header>
       <div className={s.scroll} onDragEnd={() => (setFrom(null), setOver(null))}>

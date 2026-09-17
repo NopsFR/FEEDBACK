@@ -3,6 +3,7 @@ import { usePlayer } from "@/features/player/store";
 import { useNav } from "@/state/nav";
 import { useUi } from "@/state/ui";
 import { useVideo } from "@/features/videos/Videos";
+import { showShortcuts } from "./ShortcutsSheet";
 
 const typing = (el: EventTarget | null) => {
   const t = el as HTMLElement | null;
@@ -11,7 +12,7 @@ const typing = (el: EventTarget | null) => {
 
 /**
  * Space play/pause · Ctrl/Cmd+K search · Ctrl+←/→ prev/next · Ctrl+↑/↓ volume · Alt+←/→ back/forward
- * Ctrl+L favourite… (kept small and discoverable in the About section)
+ * Ctrl+L favourite · Ctrl+/ shows the full list (also in Settings → About)
  */
 export function useShortcuts() {
   useEffect(() => {
@@ -61,6 +62,9 @@ export function useShortcuts() {
       } else if (mod && e.key.toLowerCase() === "j") {
         e.preventDefault();
         useUi.getState().toggleQueue();
+      } else if ((mod && e.key === "/") || (e.key === "?" && !mod)) {
+        e.preventDefault();
+        showShortcuts();
       } else if (e.key === "F11" || (mod && e.key.toLowerCase() === "f" && e.shiftKey)) {
         e.preventDefault();
         useUi.getState().setNowPlaying(!useUi.getState().nowPlayingOpen);

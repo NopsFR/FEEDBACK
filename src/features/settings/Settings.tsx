@@ -7,6 +7,7 @@ import { useLoad } from "@/lib/useLoad";
 import { relativeDay, plural } from "@/lib/format";
 import { useLibrary } from "@/state/library";
 import { useSettings, type IntroMode, type ReplayGainMode } from "@/state/settings";
+import { showShortcuts } from "@/app/ShortcutsSheet";
 import { toastError } from "@/state/ui";
 import { Button } from "@/components/Button";
 import { IconButton } from "@/components/IconButton";
@@ -304,6 +305,12 @@ export function Settings({ section }: { section?: string }) {
               <div>
                 <dt>Privacy</dt>
                 <dd>No account. No ads. No telemetry. Your library never leaves this device unless you sync it yourself.</dd>
+              </div>
+              <div>
+                <dt>Keyboard</dt>
+                <dd>
+                  <button className={s.link} onClick={showShortcuts}>Show the shortcuts</button> — or press {navigator.platform.toLowerCase().includes("mac") ? "⌘" : "Ctrl"} /
+                </dd>
               </div>
               <div>
                 <dt>Type</dt>
