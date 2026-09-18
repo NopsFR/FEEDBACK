@@ -80,7 +80,7 @@ export function Devices() {
             </Button>
             {!st.pwaBundled && <p className={s.rowHint}>Developer build: run <code>pnpm build:pwa</code> so the phone app can be served.</p>}
           </div>
-          {st.qrSvg && <div className={s.qr} dangerouslySetInnerHTML={{ __html: st.qrSvg }} aria-label={`QR code for ${st.setupUrl}`} />}
+          {st.qrSvg && <div className={s.qr} role="img" dangerouslySetInnerHTML={{ __html: st.qrSvg }} aria-label={`QR code for ${st.setupUrl}`} />}
         </div>
       )}
 

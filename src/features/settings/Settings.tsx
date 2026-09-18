@@ -6,6 +6,7 @@ import { isTauri } from "@/services/platform";
 import { useLoad } from "@/lib/useLoad";
 import { relativeDay, plural } from "@/lib/format";
 import { useLibrary } from "@/state/library";
+import { useNav } from "@/state/nav";
 import { useSettings, type IntroMode, type ReplayGainMode } from "@/state/settings";
 import { showShortcuts } from "@/app/ShortcutsSheet";
 import { toastError } from "@/state/ui";
@@ -92,6 +93,7 @@ function Folders() {
         </div>
       ))}
       {data && !data.length && <p className={s.muted}>No folders yet.</p>}
+      <MissingFiles />
       <div className={s.folderActions}>
         <Button icon="folder" onClick={() => chooseMusicFolder().then(reload)}>
           Add folder
@@ -104,6 +106,20 @@ function Folders() {
         </Button>
       </div>
     </div>
+  );
+}
+
+/** Files the last scan couldn't find. Quiet when there are none. */
+function MissingFiles() {
+  const missing = useLibrary((l) => l.overview?.missing ?? 0);
+  const go = useNav((n) => n.go);
+  if (!missing) return null;
+  return (
+    <Row label="Missing files" hint="These tracks were in the library but their files weren't at the old paths — an unplugged drive, a rename or a move. Nothing is removed for you.">
+      <Button variant="secondary" onClick={() => go({ name: "smart", which: "missing" })}>
+        Review {missing.toLocaleString()}
+      </Button>
+    </Row>
   );
 }
 
@@ -153,6 +169,7 @@ function Equaliser() {
         <Toggle on={eqEnabled} onChange={(v) => set("eqEnabled", v)} label="Equaliser" />
         <select
           className={s.select}
+          aria-label="Equaliser preset"
           value={EQ_PRESETS[eqPreset] ? eqPreset : "custom"}
           onChange={(e) => {
             const p = e.target.value;

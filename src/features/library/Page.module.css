@@ -77,3 +77,13 @@
     opacity: 0.4;
   }
 }
+
+/* An explanation that sits above a list, e.g. what "missing" means. */
+.note {
+  max-width: 62ch;
+  margin: -12px 0 22px;
+  padding-left: 12px;
+  border-left: 2px solid var(--burgundy);
+  color: var(--paper-3);
+  line-height: 1.55;
+}

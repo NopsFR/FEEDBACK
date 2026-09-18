@@ -29,7 +29,7 @@ Working 0.1.0: desktop app, installer, library engine, playback, core UI, Now Pl
 downloads, LAN phone server + PWA with offline albums, brand system, renders, marketing, landing page.
 Useful scripts on Windows: `.sync\dev.ps1` (restart dev with CDP), `.sync\cargotest.cmd`, `tests/e2e/drive.mjs`,
 `tests/e2e/pwa.mjs <code>`, `tests/e2e/prod-smoke.mjs`, `tests/e2e/phone-edits.mjs`, `tests/e2e/phone-widths.mjs`,
-`tests/e2e/smart-playlists.mjs`, `tests/e2e/pwa-shell.mjs` (needs `pnpm build:pwa` + `pnpm vite preview --outDir dist-pwa --port 4173`). Blender: `blender -b -P design/blender/build_assets.py`.
+`tests/e2e/smart-playlists.mjs`, `tests/e2e/radio.mjs`, `tests/e2e/a11y.mjs`, `tests/e2e/queue-and-keys.mjs`, `tests/e2e/artwork-finder.mjs`, `tests/e2e/pwa-shell.mjs` (needs `pnpm build:pwa` + `pnpm vite preview --outDir dist-pwa --port 4173`). Blender: `blender -b -P design/blender/build_assets.py`.
 
 ## Code rules
 - One authoritative playback/queue service (`src/features/player/engine`). No fake controls.

@@ -72,7 +72,11 @@ export function Stage() {
     const target = entry?.scroll ?? 0;
     // Wait a frame for lists to size themselves, then restore.
     el.scrollTop = target;
-    const raf = requestAnimationFrame(() => (el.scrollTop = target));
+    const raf = requestAnimationFrame(() => {
+      el.scrollTop = target;
+      // Screen readers should land in the page that just opened, unless something else took focus.
+      if (document.activeElement === document.body) el.focus({ preventScroll: true });
+    });
     return () => cancelAnimationFrame(raf);
   }, [key, index]);
 

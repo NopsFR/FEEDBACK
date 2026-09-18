@@ -58,5 +58,15 @@ Utilities: `.label` (spaced caps), `.mono` (tabular figures), `.display`, `.hand
 - Mobile/PWA layouts are a separate composition (see `docs/MOBILE.md`), not a squashed desktop.
 
 ## Accessibility
-Roles on sliders, menus, dialogs, tabs and grids; `aria-live` for scan status and toasts; keyboard shortcuts
-(Space, Ctrl+K, Ctrl+←/→, Ctrl+↑/↓, Alt+←/→, Ctrl+M/S/R/J, F11); `prefers-reduced-motion` respected everywhere.
+Roles on sliders, menus, dialogs, tabs and grids; `aria-live` for scan status, toasts and the track that just
+started; keyboard shortcuts (Space, Ctrl+K, Ctrl+←/→, Ctrl+↑/↓, Alt+←/→, Ctrl+M/S/R/J/L, Ctrl+/, F11) with a
+sheet on Ctrl+/; `prefers-reduced-motion` respected everywhere. Dialogs trap Tab and return focus where it was;
+a route change puts the keyboard in the new page unless something else has taken it.
+
+Contrast is a token rule, not a per-screen judgement: `--paper-1` and `--paper-2` are body text, `--paper-3` is
+the floor for anything readable (4.6:1 or better on every ink), and `--paper-4` is for counts, placeholders and
+disabled text only. `--red-soft` marks the playing row and stays legible over hover and selected rows; full
+`--red` is for marks and accents, not small text on light backgrounds.
+
+`node tests/e2e/a11y.mjs` runs axe-core over the main screens against the dev app and fails on serious or
+critical violations. Run it after layout or colour changes.

@@ -189,25 +189,26 @@ export function TrackList({ tracks, columns = ["index", "title", "album", "durat
   const phoneWidths = { ...W, index: "22px", art: "34px", title: "minmax(0, 1fr)", duration: "44px", fav: "44px" };
   const phone = columns.filter((c) => c !== "album" && c !== "added" && c !== "plays").map((c) => phoneWidths[c]).join(" ");
   return (
-    <div className={s.list} style={{ ["--cols" as string]: cols, ["--cols-narrow" as string]: narrow, ["--cols-phone" as string]: phone }}>
-      <div className={s.header} role="row">
-        {columns.includes("index") && <span className={s.idx}>#</span>}
-        {columns.includes("art") && <span />}
-        <span>Title</span>
-        {columns.includes("album") && <span className={s.wide}>Album</span>}
-        {columns.includes("plays") && <span className={`${s.right} ${s.wide}`}>Plays</span>}
-        {columns.includes("added") && <span className={s.wide}>Added</span>}
-        {columns.includes("duration") && (
-          <span className={s.right}>
-            <Icon name="history" size={14} />
-          </span>
-        )}
-        {columns.includes("fav") && <span />}
+    <div className={s.list} role="grid" aria-rowcount={tracks.length} style={{ ["--cols" as string]: cols, ["--cols-narrow" as string]: narrow, ["--cols-phone" as string]: phone }}>
+      <div role="rowgroup">
+        <div className={s.header} role="row">
+          {columns.includes("index") && <span className={s.idx} role="columnheader">#</span>}
+          {columns.includes("art") && <span role="columnheader" aria-label="Artwork" />}
+          <span role="columnheader">Title</span>
+          {columns.includes("album") && <span className={s.wide} role="columnheader">Album</span>}
+          {columns.includes("plays") && <span className={`${s.right} ${s.wide}`} role="columnheader">Plays</span>}
+          {columns.includes("added") && <span className={s.wide} role="columnheader">Added</span>}
+          {columns.includes("duration") && (
+            <span className={s.right} role="columnheader" aria-label="Length">
+              <Icon name="history" size={14} />
+            </span>
+          )}
+          {columns.includes("fav") && <span role="columnheader" aria-label="Favourite" />}
+        </div>
       </div>
       <div
         ref={listRef}
-        role="grid"
-        aria-rowcount={tracks.length}
+        role="rowgroup"
         tabIndex={0}
         className={s.body}
         onKeyDown={onKey}
@@ -294,7 +295,7 @@ const Row = memo(function Row({ t, i, top, columns, number, selected, current, p
       onDragOver={(e) => onDragOver(e, i)}
     >
       {columns.includes("index") && (
-        <span className={s.idx}>
+        <span className={s.idx} role="gridcell">
           <span className={s.num}>{current ? <Playing active={playing} /> : number ?? "–"}</span>
           <button
             className={s.playBtn}
@@ -309,8 +310,8 @@ const Row = memo(function Row({ t, i, top, columns, number, selected, current, p
           </button>
         </span>
       )}
-      {columns.includes("art") && <Artwork hash={t.art} size={160} seed={t.album} className={s.thumb} />}
-      <span className={s.titleCell}>
+      {columns.includes("art") && <span role="gridcell"><Artwork hash={t.art} size={160} seed={t.album} className={s.thumb} /></span>}
+      <span className={s.titleCell} role="gridcell">
         <span className={`truncate ${s.title}`}>{t.title}</span>
         {!hideArtist && <span className={`truncate ${s.artist}`}>
           {t.artistId ? (
@@ -328,7 +329,7 @@ const Row = memo(function Row({ t, i, top, columns, number, selected, current, p
         </span>}
       </span>
       {columns.includes("album") && (
-        <span className={`truncate ${s.album} ${s.wide}`}>
+        <span className={`truncate ${s.album} ${s.wide}`} role="gridcell">
           {t.albumId ? (
             <a
               onClick={(e) => {
@@ -343,11 +344,11 @@ const Row = memo(function Row({ t, i, top, columns, number, selected, current, p
           )}
         </span>
       )}
-      {columns.includes("plays") && <span className={`mono ${s.right} ${s.dim} ${s.wide}`}>{t.playCount || ""}</span>}
-      {columns.includes("added") && <span className={`mono ${s.dim} ${s.wide}`}>{new Date(t.addedAt).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })}</span>}
-      {columns.includes("duration") && <span className={`mono ${s.right} ${s.dim}`}>{duration(t.durationMs)}</span>}
+      {columns.includes("plays") && <span className={`mono ${s.right} ${s.dim} ${s.wide}`} role="gridcell">{t.playCount || ""}</span>}
+      {columns.includes("added") && <span className={`mono ${s.dim} ${s.wide}`} role="gridcell">{new Date(t.addedAt).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })}</span>}
+      {columns.includes("duration") && <span className={`mono ${s.right} ${s.dim}`} role="gridcell">{duration(t.durationMs)}</span>}
       {columns.includes("fav") && (
-        <button
+        <span role="gridcell"><button
           className={`${s.fav} ${fav ? s.favOn : ""}`}
           aria-label={fav ? "Remove from favourites" : "Favourite"}
           aria-pressed={fav}
@@ -357,7 +358,7 @@ const Row = memo(function Row({ t, i, top, columns, number, selected, current, p
           }}
         >
           <Icon name={fav ? "heartFill" : "heart"} size={15} />
-        </button>
+        </button></span>
       )}
     </div>
   );

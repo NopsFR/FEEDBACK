@@ -270,7 +270,7 @@ const trackList = () => Object.values(catalog.tracks).sort((a, b) => a.albumArti
 
 export async function overview(): Promise<Overview> {
   const t = trackList();
-  return { tracks: t.length, albums: catalog.savedAlbums.length, artists: new Set(t.map((x) => x.artistId)).size, videos: 0, folders: 0, durationMs: t.reduce((a, x) => a + x.durationMs, 0) };
+  return { tracks: t.length, albums: catalog.savedAlbums.length, artists: new Set(t.map((x) => x.artistId)).size, videos: 0, folders: 0, durationMs: t.reduce((a, x) => a + x.durationMs, 0), missing: 0 };
 }
 export async function tracks(): Promise<Track[]> {
   return trackList();

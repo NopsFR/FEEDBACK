@@ -87,6 +87,7 @@ pub async fn smart_list(state: S<'_>, which: String, limit: Option<i64>) -> AppR
         "history" => query::history(c, limit),
         "most-played" => query::most_played(c, limit),
         "recently-added" => query::recently_added_tracks(c, limit),
+        "missing" => query::missing_tracks(c, limit),
         _ => Ok(vec![]),
     })?)
 }

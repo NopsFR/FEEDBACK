@@ -40,7 +40,7 @@
 .n {
   font: 500 9.5px var(--font-mono);
   letter-spacing: 0;
-  color: var(--paper-4);
+  color: var(--paper-3);
 }
 .add {
   margin-left: auto;

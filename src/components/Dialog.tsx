@@ -18,6 +18,20 @@ export function Dialog({ title, children, onClose, width = 440 }: { title: strin
       if (e.key === "Escape") {
         e.stopPropagation();
         onClose();
+        return;
+      }
+      // Keep Tab inside the dialog: behind it is a whole app the keyboard shouldn't wander into.
+      if (e.key !== "Tab" || !ref.current) return;
+      const stops = [...ref.current.querySelectorAll<HTMLElement>('a[href],button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex]:not([tabindex="-1"])')].filter((el) => el.offsetParent !== null);
+      if (!stops.length) return;
+      const [first, last] = [stops[0], stops[stops.length - 1]];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && (active === first || !ref.current.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !ref.current.contains(active))) {
+        e.preventDefault();
+        first.focus();
       }
     };
     window.addEventListener("keydown", onKey, true);

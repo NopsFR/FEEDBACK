@@ -15,6 +15,7 @@ import { importDropped } from "@/features/library/importMusic";
 import { ContextMenuHost } from "@/components/ContextMenu";
 import { DialogHost } from "@/components/Dialog";
 import { Toasts } from "@/components/Toasts";
+import { Announcer } from "@/features/player/Announcer";
 import { SheetHost } from "@/components/ActionSheet";
 import { MobileShell } from "./mobile/MobileShell";
 import { useIsMobile } from "@/lib/useMedia";
@@ -137,6 +138,7 @@ export function App() {
         </>
       )}
       <VideoPlayer />
+      <Announcer />
       <ContextMenuHost />
       <DialogHost />
       <SheetHost />

@@ -16,7 +16,7 @@ export type Route =
   | { name: "videos" }
   | { name: "playlists" }
   | { name: "playlist"; id: number }
-  | { name: "smart"; which: "favourites" | "history" | "most-played" | "recently-added" }
+  | { name: "smart"; which: "favourites" | "history" | "most-played" | "recently-added" | "missing" }
   | { name: "settings"; section?: string };
 
 interface Entry {

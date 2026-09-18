@@ -68,6 +68,7 @@ export interface Overview {
   videos: number;
   folders: number;
   durationMs: number;
+  missing: number;
 }
 
 export interface AlbumDetail {
@@ -171,7 +172,7 @@ export interface ImportResult {
   rejected: number;
 }
 
-export type SmartList = "favourites" | "history" | "most-played" | "recently-added";
+export type SmartList = "favourites" | "history" | "most-played" | "recently-added" | "missing";
 
 export interface AppError {
   code: string;

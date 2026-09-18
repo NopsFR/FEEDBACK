@@ -30,6 +30,8 @@
 - [x] Find artwork online: opt-in MusicBrainz release match plus Cover Art Archive sleeves, rate-limited and metadata-only, applied to FEEDBACK's artwork cache without touching the files (live service check runs with `cargo test -- --ignored`)
 - [x] Queue keeps: save the current queue as a playlist; keyboard map available with Ctrl / and from About
 - [x] Runs: "Start a run from here" builds a listening run from the local library (artist, genre, era and favourites, thinned so no album takes over), on desktop and phone
+- [x] Missing files: tracks whose files moved or went offline are counted in Settings and reviewed on their own page — look again, or remove them from the library; nothing is deleted from disk
+- [x] Accessibility pass: axe-core sweep of the main screens (no serious or critical findings), grid semantics for track lists, dialog focus trapping, a live region for playback, and contrast-safe text tokens
 
 ## Open
 - [~] iPhone: test on a real device (certificate trust, Home Screen install, lock-screen playback) — see MOBILE.md checklist

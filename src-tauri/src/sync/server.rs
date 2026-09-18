@@ -322,6 +322,7 @@ async fn smart(AxState(ctx): AxState<Ctx>, headers: HeaderMap, Query(q): Query<T
         "history" => query::history(c, 300),
         "most-played" => query::most_played(c, 300),
         "recently-added" => query::recently_added_tracks(c, 300),
+        "missing" => query::missing_tracks(c, 300),
         _ => Ok(vec![]),
     }))
 }

@@ -163,6 +163,8 @@ pub struct Overview {
     pub videos: i64,
     pub folders: i64,
     pub duration_ms: i64,
+    /// Files the last scan couldn't find. Kept in the library until the user decides.
+    pub missing: i64,
 }
 
 pub fn overview(conn: &Connection) -> rusqlite::Result<Overview> {
@@ -173,10 +175,16 @@ pub fn overview(conn: &Connection) -> rusqlite::Result<Overview> {
             (SELECT COUNT(DISTINCT album_artist_id) FROM album WHERE id IN (SELECT album_id FROM track WHERE missing = 0)),
             (SELECT COUNT(*) FROM track WHERE missing = 0 AND kind = 'video'),
             (SELECT COUNT(*) FROM library_folder),
-            (SELECT COALESCE(SUM(duration_ms), 0) FROM track WHERE missing = 0 AND kind = 'audio')",
+            (SELECT COALESCE(SUM(duration_ms), 0) FROM track WHERE missing = 0 AND kind = 'audio'),
+            (SELECT COUNT(*) FROM track WHERE missing = 1)",
         [],
-        |r| Ok(Overview { tracks: r.get(0)?, albums: r.get(1)?, artists: r.get(2)?, videos: r.get(3)?, folders: r.get(4)?, duration_ms: r.get(5)? }),
+        |r| Ok(Overview { tracks: r.get(0)?, albums: r.get(1)?, artists: r.get(2)?, videos: r.get(3)?, folders: r.get(4)?, duration_ms: r.get(5)?, missing: r.get(6)? }),
     )
+}
+
+/// Tracks whose files weren't where the library expected them. Nothing is deleted on their behalf.
+pub fn missing_tracks(conn: &Connection, limit: i64) -> rusqlite::Result<Vec<TrackRow>> {
+    tracks_where(conn, "WHERE t.missing = 1 ORDER BY lower(t.album_artist_name), lower(t.album_title), t.disc_no, t.track_no LIMIT ?1", [limit])
 }
 
 pub fn all_tracks(conn: &Connection, kind: &str) -> rusqlite::Result<Vec<TrackRow>> {

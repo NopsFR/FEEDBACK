@@ -16,14 +16,14 @@
   /* paper (text) */
   --paper-1: #e6e1d6;
   --paper-2: #a9a49a;
-  --paper-3: #6f6c66;
-  --paper-4: #4a4845;
+  --paper-3: #807d76; /* 4.6:1+ on every ink: small print stays readable */
+  --paper-4: #625f59; /* counts, disabled, placeholders — 3:1 */
 
   /* metal + signal */
   --chrome: #a7a7a7;
   --chrome-dim: #6b6b6b;
   --red: #ff2a3a;
-  --red-soft: #e2323f;
+  --red-soft: #f4525d; /* the playing row: keeps 4.5:1 over hover and selected backgrounds */
   --burgundy: #8b0f1a;
   --wine: #3b0a10;
 
