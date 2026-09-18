@@ -29,7 +29,13 @@ Working 0.1.0: desktop app, installer, library engine, playback, core UI, Now Pl
 downloads, LAN phone server + PWA with offline albums, brand system, renders, marketing, landing page.
 Useful scripts on Windows: `.sync\dev.ps1` (restart dev with CDP), `.sync\cargotest.cmd`, `tests/e2e/drive.mjs`,
 `tests/e2e/pwa.mjs <code>`, `tests/e2e/prod-smoke.mjs`, `tests/e2e/phone-edits.mjs`, `tests/e2e/phone-widths.mjs`,
-`tests/e2e/smart-playlists.mjs`, `tests/e2e/radio.mjs`, `tests/e2e/a11y.mjs`, `tests/e2e/queue-and-keys.mjs`, `tests/e2e/artwork-finder.mjs`, `tests/e2e/pwa-shell.mjs` (needs `pnpm build:pwa` + `pnpm vite preview --outDir dist-pwa --port 4173`). Blender: `blender -b -P design/blender/build_assets.py`.
+`tests/e2e/smart-playlists.mjs`, `tests/e2e/radio.mjs`, `tests/e2e/catalogue.mjs`, `tests/e2e/a11y.mjs`, `tests/e2e/queue-and-keys.mjs`, `tests/e2e/artwork-finder.mjs`, `tests/e2e/pwa-shell.mjs` (needs `pnpm build:pwa` + `pnpm vite preview --outDir dist-pwa --port 4173`). Blender: `blender -b -P design/blender/build_assets.py`.
+
+## Catalogue rules
+- Providers live behind `src-tauri/src/catalogue/`. No direct HTTP anywhere else; every call goes through a `net::Lane` (pacing, Retry-After, breaker) and the `cache` (TTL per kind, versioned, pruned).
+- Metadata is not audio: a result is playable only when it carries a `PlaybackSource`. Never show Play for a catalogue row.
+- Parse in free functions so mappings are tested from fixtures; the live check (`cargo test -- --ignored`) is separate and optional.
+- MusicBrainz is shared infrastructure: one request at a time, 1.4s apart, contactable user agent, and one request per search wherever possible. Provider terms live in `FEEDBACK_ENGINEERING_STATUS.md`.
 
 ## Code rules
 - One authoritative playback/queue service (`src/features/player/engine`). No fake controls.

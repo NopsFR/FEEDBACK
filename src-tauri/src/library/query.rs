@@ -270,7 +270,7 @@ pub fn artist(conn: &Connection, id: i64) -> rusqlite::Result<Option<ArtistDetai
     Ok(Some(ArtistDetail { id, name, albums, appears_on, top_tracks, videos, track_count, duration_ms }))
 }
 
-#[derive(Serialize)]
+#[derive(Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchResult {
     pub tracks: Vec<TrackRow>,

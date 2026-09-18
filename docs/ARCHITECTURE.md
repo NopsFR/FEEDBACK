@@ -77,11 +77,16 @@ era, gives favourites a nudge, pushes down the seed's own album and anything pla
 term so two runs differ. The result is thinned to two tracks per album and a few per artist, relaxing those caps only
 when a small library can't fill the run. It is one SQL query plus a pass in Rust — nothing external picks the music.
 
-Catalogue lookups (`metadata/lookup.rs`) are opt-in and off by default (`settings.onlineLookups`, checked in Rust, not
-just in the UI). "Find artwork online…" sends one album's title and artist to MusicBrainz, then fetches the matching
-sleeve from the Cover Art Archive; requests carry an identifying user agent and are throttled to one per second. These
-are metadata services: no audio is ever requested from them, results are never presented as playable, and the artwork is
-stored in FEEDBACK's own cache — the audio files are not modified.
+The catalogue (`src-tauri/src/catalogue/`) is how FEEDBACK knows about music that isn't on this
+machine. `net.rs` gives each provider a lane (minimum interval, timeout, `Retry-After`, circuit
+breaker, latency and error counts); `cache.rs` is a versioned, TTL'd, pruned SQLite cache of
+*normalised* models; `resolve.rs` decides when two results are the same recording, keeping live,
+acoustic, demo, remix and remaster versions apart; `search.rs` runs the orchestrator — local library
+first, providers after, merged, ranked, with per-provider timings for the developer panel. Providers
+(`providers/`) implement only what they support: MusicBrainz for identity, the Cover Art Archive for
+sleeves. All of it is gated on `settings.onlineLookups`, checked in Rust. Metadata is never mistaken
+for audio: a result is playable only when it carries a `PlaybackSource`, and today that means a local
+file. Provider terms, limits and the reasons for each choice live in `FEEDBACK_ENGINEERING_STATUS.md`.
 
 The PWA service worker (`public/sw.js`) caches the app shell only. Install pre-caches the entry scripts parsed out of
 `index.html`; every successful navigation re-adopts the served document, adds its scripts and deletes only the assets the

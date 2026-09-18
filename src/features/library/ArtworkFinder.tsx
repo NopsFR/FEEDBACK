@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Dialog } from "@/components/Dialog";
 import { Button } from "@/components/Button";
 import { call } from "@/services/ipc";
-import type { Album, LookupCandidate } from "@/services/types";
+import type { Album, CatalogueRelease } from "@/services/types";
 import { useLibrary } from "@/state/library";
 import { useSettings } from "@/state/settings";
 import { toast, toastError, useUi } from "@/state/ui";
@@ -14,7 +14,7 @@ import s from "./ArtworkFinder.module.css";
  */
 function Finder({ album, onClose }: { album: Album; onClose: () => void }) {
   const allowed = useSettings((st) => st.onlineLookups);
-  const [results, setResults] = useState<LookupCandidate[] | null>(null);
+  const [results, setResults] = useState<CatalogueRelease[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [applying, setApplying] = useState<string | null>(null);
 
@@ -23,16 +23,16 @@ function Finder({ album, onClose }: { album: Album; onClose: () => void }) {
     let alive = true;
     setResults(null);
     setError(null);
-    call<LookupCandidate[]>("lookup_album", { albumId: album.id })
+    call<CatalogueRelease[]>("lookup_album", { albumId: album.id })
       .then((r) => alive && setResults(r))
       .catch((e) => alive && setError(e instanceof Error ? e.message : String(e)));
     return () => { alive = false; };
   }, [album.id, allowed]);
 
-  const apply = async (candidate: LookupCandidate) => {
-    setApplying(candidate.mbid);
+  const apply = async (candidate: CatalogueRelease) => {
+    setApplying(candidate.canonicalId);
     try {
-      await call("apply_lookup_art", { albumId: album.id, mbid: candidate.mbid });
+      await call("apply_lookup_art", { albumId: album.id, mbid: candidate.ids.releaseMbid });
       useLibrary.getState().invalidate();
       toast("Artwork updated.");
       onClose();
@@ -74,9 +74,9 @@ function Finder({ album, onClose }: { album: Album; onClose: () => void }) {
       ) : (
         <ul className={s.grid}>
           {results.map((candidate) => (
-            <li key={candidate.mbid}>
+            <li key={candidate.canonicalId}>
               <button className={s.card} onClick={() => void apply(candidate)} disabled={!!applying}>
-                <img className={s.thumb} src={candidate.thumb ?? ""} alt="" width={132} height={132} />
+                <img className={s.thumb} src={candidate.artwork.remote ?? ""} alt="" width={132} height={132} />
                 <span className={s.title}>{candidate.title}</span>
                 <span className={s.meta}>{candidate.artist}</span>
                 <span className={`mono ${s.spec}`}>
@@ -84,7 +84,7 @@ function Finder({ album, onClose }: { album: Album; onClose: () => void }) {
                     .filter(Boolean)
                     .join(" · ")}
                 </span>
-                {applying === candidate.mbid && <span className={`mono ${s.spec}`}>Saving…</span>}
+                {applying === candidate.canonicalId && <span className={`mono ${s.spec}`}>Saving…</span>}
               </button>
             </li>
           ))}

@@ -13,6 +13,7 @@ import { VideoShelf } from "@/features/videos/Videos";
 import { usePlayer } from "@/features/player/store";
 import { playAlbum } from "@/features/library/actions";
 import { plural } from "@/lib/format";
+import { CatalogueResults } from "./Catalogue";
 import s from "./Search.module.css";
 
 export function Search({ initial }: { initial?: string }) {
@@ -176,8 +177,10 @@ export function Search({ initial }: { initial?: string }) {
               <VideoShelf videos={res.videos} />
             </Section>
           )}
+          <CatalogueResults query={q} index={7} />
         </div>
       )}
+      {nothing && <CatalogueResults query={q} index={1} />}
     </Page>
   );
 }

@@ -109,16 +109,108 @@ export interface PlaylistDetail {
   entries: { entryId: Id; track: Track }[];
 }
 
-export interface LookupCandidate {
-  mbid: string;
+/** Identifiers that let FEEDBACK recognise the same recording across providers. */
+export interface ExternalIds {
+  recordingMbid?: string | null;
+  releaseMbid?: string | null;
+  releaseGroupMbid?: string | null;
+  artistMbid?: string | null;
+  isrcs?: string[];
+  other?: Record<string, string>;
+}
+
+export type PlaybackKind = "localFile" | "legalRemoteStream" | "externalLink" | "unavailable";
+
+export interface PlaybackSource {
+  kind: PlaybackKind;
+  provider: string;
+  trackId: number | null;
+  url: string | null;
+  mime: string | null;
+}
+
+export interface ArtworkRef {
+  hash: string | null;
+  remote: string | null;
+}
+
+/** A track as the catalogue sees it. `sources` decides whether anything can play it. */
+export interface CatalogueTrack {
+  canonicalId: string;
+  title: string;
+  artist: string;
+  album: string | null;
+  durationMs: number | null;
+  trackNo?: number | null;
+  discNo?: number | null;
+  releaseDate: string | null;
+  releaseKind: string | null;
+  ids: ExternalIds;
+  tags?: string[];
+  artwork: ArtworkRef;
+  sources: PlaybackSource[];
+  metadataSources: string[];
+  localTrackId: number | null;
+}
+
+export interface CatalogueRelease {
+  canonicalId: string;
   title: string;
   artist: string;
   date: string | null;
   country: string | null;
   label: string | null;
-  trackCount: number | null;
   format: string | null;
-  thumb: string | null;
+  trackCount: number | null;
+  ids: ExternalIds;
+  artwork: ArtworkRef;
+  localAlbumId: number | null;
+  metadataSources: string[];
+}
+
+export interface CatalogueArtist {
+  canonicalId: string;
+  name: string;
+  sortName: string | null;
+  disambiguation: string | null;
+  country: string | null;
+  ids: ExternalIds;
+  tags?: string[];
+  localArtistId: number | null;
+  metadataSources: string[];
+}
+
+export interface CatalogueSearchDebug {
+  query: string;
+  providers: { provider: string; results: number; ms: number; cache: string; error: string | null }[];
+  incoming: number;
+  unique: number;
+  duplicatesRemoved: number;
+  totalMs: number;
+}
+
+export interface CatalogueOutcome {
+  tracks: CatalogueTrack[];
+  releases: CatalogueRelease[];
+  artists: CatalogueArtist[];
+  remoteAnswered: boolean;
+  debug: CatalogueSearchDebug;
+}
+
+export interface ProviderStatus {
+  provider: string;
+  state: "healthy" | "degraded" | "rateLimited" | "offline" | "disabled";
+  requests: number;
+  errors: number;
+  lastError: string | null;
+  lastSuccessMsAgo: number | null;
+  averageLatencyMs: number;
+  waitingFor: number | null;
+}
+
+export interface CatalogueHealth {
+  providers: ProviderStatus[];
+  cache: { hits: number; misses: number; staleServed: number; rows: number; schema: number };
 }
 
 export interface SearchResult {

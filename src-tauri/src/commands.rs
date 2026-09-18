@@ -1,4 +1,5 @@
 //! IPC surface. All commands are async so SQLite work never blocks the UI thread.
+use crate::catalogue;
 use crate::error::{AppError, AppResult};
 use crate::library::{mutate, query, scan, watch};
 use crate::state::AppState;
@@ -509,24 +510,48 @@ fn lookups_allowed(state: &S<'_>) -> AppResult<bool> {
     Ok(settings.get("settings.onlineLookups").and_then(|v| v.as_bool()).unwrap_or(false))
 }
 
-/// Candidate releases for an album, from MusicBrainz, with Cover Art Archive previews.
-/// Nothing leaves the machine unless the user runs this on a specific album.
+/// Candidate releases for an album: MusicBrainz decides which release it is, the Cover Art Archive
+/// supplies the sleeve. Nothing leaves the machine unless the user runs this on a specific album.
 #[tauri::command]
-pub async fn lookup_album(state: S<'_>, album_id: i64) -> AppResult<Vec<crate::metadata::lookup::Candidate>> {
+pub async fn lookup_album(app: AppHandle, state: S<'_>, album_id: i64) -> AppResult<Vec<catalogue::CatalogueRelease>> {
     if !lookups_allowed(&state)? {
         return Err(AppError::User("Turn on online lookups in Settings first.".into()));
     }
     let album = state.db.with(|c| query::album(c, album_id))?.ok_or(AppError::NotFound)?;
     let (title, artist) = (album.album.title.clone(), album.album.artist.clone());
     tauri::async_runtime::spawn_blocking(move || {
-        let mut candidates = crate::metadata::lookup::search_release(&artist, &title, 5).map_err(AppError::User)?;
+        use catalogue::{ArtworkProvider, MetadataProvider};
+        let state = app.state::<AppState>();
+        let musicbrainz = catalogue::providers::musicbrainz::MusicBrainz::new(state.lanes.musicbrainz.clone());
+        let art = catalogue::providers::coverart::CoverArtArchive::new(state.lanes.coverart.clone());
+
+        let key = catalogue::cache::key("musicbrainz", catalogue::cache::Kind::Release, &format!("match:{artist}:{title}"));
+        let mut candidates = match catalogue::cache::get::<Vec<catalogue::CatalogueRelease>>(&state.db, &key).filter(|h| h.freshness == catalogue::cache::Freshness::Fresh) {
+            Some(hit) => hit.value,
+            None => {
+                catalogue::cache::miss();
+                let found = musicbrainz.match_release(&artist, &title, 5).map_err(|e| AppError::User(e.to_string()))?;
+                catalogue::cache::put(&state.db, &key, "musicbrainz", catalogue::cache::Kind::Release, &found);
+                found
+            }
+        };
         for candidate in candidates.iter_mut() {
-            if let Ok(bytes) = crate::metadata::lookup::cover_art(&candidate.mbid, 250) {
-                candidate.thumb = Some(crate::metadata::lookup::data_url(&bytes));
+            let thumb_key = catalogue::cache::key("coverart", catalogue::cache::Kind::ArtworkRef, &candidate.canonical_id);
+            match catalogue::cache::get::<Option<String>>(&state.db, &thumb_key).filter(|h| h.freshness == catalogue::cache::Freshness::Fresh) {
+                Some(hit) => candidate.artwork.remote = hit.value,
+                None => {
+                    catalogue::cache::miss();
+                    let thumb = art.artwork(&candidate.ids, 250).ok().map(|bytes| catalogue::providers::coverart::data_url(&bytes));
+                    catalogue::cache::put(&state.db, &thumb_key, "coverart", catalogue::cache::Kind::ArtworkRef, &thumb);
+                    candidate.artwork.remote = thumb;
+                }
+            }
+            if candidate.artwork.remote.is_some() {
+                candidate.metadata_sources.push("coverart".into());
             }
         }
         // A release with no sleeve on file is no use for artwork; keep the rest in order.
-        candidates.retain(|c| c.thumb.is_some());
+        candidates.retain(|c| c.artwork.remote.is_some());
         Ok(candidates)
     })
     .await
@@ -539,10 +564,17 @@ pub async fn apply_lookup_art(app: AppHandle, state: S<'_>, album_id: i64, mbid:
     if !lookups_allowed(&state)? {
         return Err(AppError::User("Turn on online lookups in Settings first.".into()));
     }
-    let bytes = tauri::async_runtime::spawn_blocking(move || crate::metadata::lookup::cover_art(&mbid, 1200).or_else(|_| crate::metadata::lookup::cover_art(&mbid, 500)))
-        .await
-        .map_err(|_| AppError::User("The download was interrupted.".into()))?
-        .map_err(AppError::User)?;
+    let app2 = app.clone();
+    let bytes = tauri::async_runtime::spawn_blocking(move || {
+        use catalogue::ArtworkProvider;
+        let state = app2.state::<AppState>();
+        let art = catalogue::providers::coverart::CoverArtArchive::new(state.lanes.coverart.clone());
+        let ids = catalogue::ExternalIds { release_mbid: Some(mbid), ..Default::default() };
+        art.artwork(&ids, 1200).or_else(|_| art.artwork(&ids, 500)).map_err(|e| AppError::User(e.to_string()))
+    })
+    .await
+    .map_err(|_| AppError::User("The download was interrupted.".into()))??;
+
     let hash = state.db.with(|c| Ok(state.art.store(c, &bytes, None)))?;
     let Some(hash) = hash else { return Err(AppError::User("That artwork isn't an image FEEDBACK can read.".into())) };
     state.db.with(|c| {
@@ -581,4 +613,48 @@ pub async fn download_url(app: AppHandle, state: S<'_>, url: String) -> AppResul
         }
     });
     Ok(id)
+}
+
+// ---------- catalogue (opt-in, metadata first) ----------
+
+/// Search the library, and — when the user has turned catalogue lookups on — the providers too.
+/// Remote results are metadata: the UI only offers Play when a result carries a playback source.
+#[tauri::command]
+pub async fn catalogue_search(app: AppHandle, state: S<'_>, query: String, scope: Option<catalogue::search::Scope>) -> AppResult<catalogue::search::Outcome> {
+    let allowed = lookups_allowed(&state)?;
+    let scope = match scope.unwrap_or(catalogue::search::Scope::Everywhere) {
+        catalogue::search::Scope::Everywhere if allowed => catalogue::search::Scope::Everywhere,
+        _ => catalogue::search::Scope::Local,
+    };
+    // Providers block on the network, so the search runs off the UI thread; the app handle owns the state.
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AppState>();
+        let musicbrainz = catalogue::providers::musicbrainz::MusicBrainz::new(state.lanes.musicbrainz.clone());
+        let coverart = catalogue::providers::coverart::CoverArtArchive::new(state.lanes.coverart.clone());
+        let orchestrator = catalogue::search::Orchestrator { db: &state.db, lanes: &state.lanes, providers: vec![&musicbrainz], artwork: Some(&coverart) };
+        let outcome = orchestrator.search(&query, scope, 60);
+        let _ = catalogue::cache::prune(&state.db);
+        outcome
+    })
+    .await
+    .map_err(|_| AppError::User("The search was interrupted.".into()))
+}
+
+/// Provider health and cache statistics for the developer panel. Never includes credentials.
+#[tauri::command]
+pub async fn catalogue_health(state: S<'_>) -> AppResult<serde_json::Value> {
+    let lanes: Vec<_> = state.lanes.all().iter().map(|l| l.status()).collect();
+    Ok(serde_json::json!({ "providers": lanes, "cache": catalogue::cache::stats(&state.db) }))
+}
+
+#[tauri::command]
+pub async fn catalogue_set_provider(state: S<'_>, provider: String, enabled: bool) -> AppResult<()> {
+    let lane = state.lanes.by_id(&provider).ok_or(AppError::NotFound)?;
+    lane.set_enabled(enabled);
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn catalogue_clear_cache(state: S<'_>, provider: Option<String>) -> AppResult<usize> {
+    Ok(catalogue::cache::clear(&state.db, provider.as_deref())?)
 }

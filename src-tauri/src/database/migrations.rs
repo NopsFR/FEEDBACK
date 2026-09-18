@@ -144,6 +144,33 @@ const MIGRATIONS: &[&str] = &[
         PRIMARY KEY(device_id, operation_id)
     );
     "#,
+    // 6 — catalogue: a bounded cache of normalised provider answers, and canonical ids for local tracks
+    r#"
+    CREATE TABLE cat_cache (
+        key TEXT PRIMARY KEY,
+        provider TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        body TEXT NOT NULL,
+        fetched_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL,
+        schema INTEGER NOT NULL DEFAULT 1
+    );
+    CREATE INDEX cat_cache_expiry ON cat_cache(expires_at);
+    CREATE INDEX cat_cache_provider ON cat_cache(provider);
+
+    CREATE TABLE cat_link (
+        track_id INTEGER PRIMARY KEY REFERENCES track(id) ON DELETE CASCADE,
+        recording_mbid TEXT,
+        release_mbid TEXT,
+        release_group_mbid TEXT,
+        artist_mbid TEXT,
+        isrc TEXT,
+        confidence REAL NOT NULL DEFAULT 0,
+        source TEXT NOT NULL,
+        linked_at INTEGER NOT NULL
+    );
+    CREATE INDEX cat_link_recording ON cat_link(recording_mbid);
+    "#,
 ];
 
 pub fn run(conn: &mut Connection) -> rusqlite::Result<()> {

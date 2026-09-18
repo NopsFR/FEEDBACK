@@ -1,3 +1,4 @@
+mod catalogue;
 mod commands;
 mod database;
 mod downloads;
@@ -66,6 +67,7 @@ pub fn run() {
                 watcher: parking_lot::Mutex::new(None),
                 imports_dir,
                 lan: parking_lot::Mutex::new(None),
+                lanes: catalogue::providers::Lanes::new(),
             });
             let handle = app.handle().clone();
             // Watch folders + a quiet incremental rescan shortly after launch.
@@ -119,6 +121,10 @@ pub fn run() {
             commands::edit_tracks,
             commands::set_album_art,
             commands::radio,
+            commands::catalogue_search,
+            commands::catalogue_health,
+            commands::catalogue_set_provider,
+            commands::catalogue_clear_cache,
             commands::lookup_album,
             commands::apply_lookup_art,
             commands::download_url,

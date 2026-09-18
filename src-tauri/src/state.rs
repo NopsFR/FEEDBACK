@@ -20,4 +20,6 @@ pub struct AppState {
     pub watcher: Mutex<Option<FolderWatcher>>,
     pub imports_dir: PathBuf,
     pub lan: Mutex<Option<crate::sync::server::Running>>,
+    /// Outbound lanes for catalogue providers: pacing, health and circuit breaking live here.
+    pub lanes: crate::catalogue::providers::Lanes,
 }

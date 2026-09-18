@@ -32,8 +32,13 @@
 - [x] Runs: "Start a run from here" builds a listening run from the local library (artist, genre, era and favourites, thinned so no album takes over), on desktop and phone
 - [x] Missing files: tracks whose files moved or went offline are counted in Settings and reviewed on their own page — look again, or remove them from the library; nothing is deleted from disk
 - [x] Accessibility pass: axe-core sweep of the main screens (no serious or critical findings), grid semantics for track lists, dialog focus trapping, a live region for playback, and contrast-safe text tokens
+- [x] Catalogue foundation: canonical models, provider interfaces, per-provider request lanes (pacing, Retry-After, circuit breaker), a versioned SQLite cache with TTLs and pruning, entity resolution that keeps versions apart, and a search orchestrator that merges the local library with providers
+- [x] MusicBrainz (identity) and Cover Art Archive (sleeves) behind that layer, with the artwork finder moved onto it; search shows catalogue results marked as metadata, never as playable
 
 ## Open
+- [ ] Catalogue: LRCLIB lyrics provider, then ListenBrainz recommendations, then Jamendo for genuinely streamable independent music (see FEEDBACK_ENGINEERING_STATUS.md)
+- [ ] Developer panel: provider health, cache statistics and the search debugger (the data is already collected)
+- [ ] Enrichment pipeline: link local tracks to canonical ids by confidence, never overwriting user-edited tags
 - [~] iPhone: test on a real device (certificate trust, Home Screen install, lock-screen playback) — see MOBILE.md checklist
 - [ ] Android build (needs Android SDK/NDK install) and native iOS (needs a Mac) — see IOS.md
 - [ ] Code signing (not available at £0), trademark check before any public release
