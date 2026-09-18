@@ -9,6 +9,11 @@
 // leaves here as `metadataOnly` and the app decides playability from sources it actually has.
 const UA = "FEEDBACK/0.1.0 ( https://github.com/NopsFR/FEEDBACK )";
 const MB = "https://musicbrainz.org/ws/2";
+// Audius publishes its catalogue and its audio openly: no key, no paid tier, and the artists who
+// upload there have agreed it can be streamed. It is the one source here that hands over music
+// rather than facts about music.
+const AUDIUS = "https://api.audius.co/v1";
+const APP = "FEEDBACK";
 
 const clean = (s) => (s ?? "").trim();
 
@@ -86,6 +91,39 @@ function rank(rows, query) {
     .map((s) => s.row);
 }
 
+/** An Audius track, but only when Audius itself says this one may be streamed. */
+function mapAudius(track) {
+  const streamable = track.is_streamable !== false && track.access?.stream !== false && !track.is_delete;
+  if (!streamable) return null;
+  const art = track.artwork?.["480x480"] ?? track.artwork?.["150x150"] ?? null;
+  return {
+    canonicalId: `audius:${track.id}`,
+    title: clean(track.title),
+    artist: clean(track.user?.name) || "Unknown artist",
+    album: null,
+    durationMs: typeof track.duration === "number" ? track.duration * 1000 : null,
+    trackNo: null,
+    discNo: null,
+    releaseDate: track.release_date ?? null,
+    releaseKind: null,
+    ids: { recordingMbid: null, releaseMbid: null, releaseGroupMbid: null, artistMbid: null, isrc: track.isrc ?? null, other: { audius: track.id } },
+    tags: (track.genre ? [track.genre] : []).filter(Boolean),
+    artwork: { hash: null, remote: art },
+    sources: [{ kind: "legalRemoteStream", provider: "audius", trackId: null, url: `${AUDIUS}/tracks/${track.id}/stream?app_name=${APP}`, mime: "audio/mpeg" }],
+    metadataSources: ["audius"],
+    localTrackId: null,
+    playbackType: "full",
+  };
+}
+
+async function audius(query) {
+  const url = `${AUDIUS}/tracks/search?query=${encodeURIComponent(query)}&limit=20&app_name=${APP}`;
+  const response = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!response.ok) throw new Error(`upstream ${response.status}`);
+  const body = await response.json();
+  return (body.data ?? []).map(mapAudius).filter(Boolean);
+}
+
 export default async function handler(req, res) {
   const query = clean(new URL(req.url, "https://x").searchParams.get("q"));
   if (query.length < 2) return res.status(400).json({ error: "A search needs at least two characters." });
@@ -119,13 +157,27 @@ export default async function handler(req, res) {
     }
   }
 
+  // Audius answers separately, and its failure is its own: MusicBrainz being busy should not hide
+  // music that can actually be played, and vice versa.
+  let playable = [];
+  let audiusError = null;
+  try {
+    playable = await audius(query);
+  } catch (error) {
+    audiusError = String(error?.message ?? error);
+  }
+  // A recording that plays outranks the same recording as a fact, so Audius goes first and
+  // MusicBrainz rows that duplicate it are dropped.
+  const heard = new Set(playable.map((t) => `${t.artist}|${t.title}`.toLowerCase()));
+  tracks = [...playable, ...tracks.filter((t) => !heard.has(`${t.artist}|${t.title}`.toLowerCase()))];
+
   // Cached at the edge: the same search from any phone costs MusicBrainz one request a day.
   res.setHeader("Cache-Control", answered ? "public, s-maxage=86400, stale-while-revalidate=604800" : "public, s-maxage=30");
   res.status(200).json({
     tracks,
     releases: [],
     artists: [],
-    remoteAnswered: answered,
-    debug: { query, providers: [{ provider: "musicbrainz", results: tracks.length, ms: Date.now() - started, cache: "miss", error: answered ? null : why ?? "no answer" }], incoming: tracks.length, unique: tracks.length, duplicatesRemoved: 0, totalMs: Date.now() - started },
+    remoteAnswered: answered || playable.length > 0,
+    debug: { query, providers: [{ provider: "audius", results: playable.length, ms: Date.now() - started, cache: "miss", error: audiusError }, { provider: "musicbrainz", results: tracks.length - playable.length, ms: Date.now() - started, cache: "miss", error: answered ? null : why ?? "no answer" }], incoming: tracks.length, unique: tracks.length, duplicatesRemoved: 0, totalMs: Date.now() - started },
   });
 }

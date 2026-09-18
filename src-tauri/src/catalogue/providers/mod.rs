@@ -1,4 +1,5 @@
 //! Provider adapters. Each one speaks to a single service and hands back FEEDBACK's own models.
+pub mod audius;
 pub mod coverart;
 pub mod lrclib;
 pub mod musicbrainz;
@@ -9,6 +10,7 @@ use std::time::Duration;
 
 /// The lanes every provider shares, built once. Pacing lives here, not in the adapters.
 pub struct Lanes {
+    pub audius: Arc<Lane>,
     pub musicbrainz: Arc<Lane>,
     pub coverart: Arc<Lane>,
     pub lrclib: Arc<Lane>,
@@ -22,6 +24,9 @@ impl Lanes {
     pub fn new() -> Self {
         let ua = user_agent();
         Self {
+            // Audius publishes no rate limit and expects ordinary app traffic; a search a second
+            // is far more than a person types.
+            audius: Arc::new(Lane::new("audius", ua.clone(), Duration::from_millis(300), Duration::from_secs(15))),
             // MusicBrainz allows about one request a second per IP, with a contactable user agent.
             // FEEDBACK leaves extra headroom: bursts still earn a 503 that blocks every request
             // from this address, and a personal library has no reason to push the limit.
@@ -34,7 +39,7 @@ impl Lanes {
     }
 
     pub fn all(&self) -> Vec<Arc<Lane>> {
-        vec![self.musicbrainz.clone(), self.coverart.clone(), self.lrclib.clone()]
+        vec![self.audius.clone(), self.musicbrainz.clone(), self.coverart.clone(), self.lrclib.clone()]
     }
 
     pub fn by_id(&self, id: &str) -> Option<Arc<Lane>> {

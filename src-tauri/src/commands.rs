@@ -715,9 +715,11 @@ pub async fn catalogue_search(app: AppHandle, state: S<'_>, query: String, scope
     // Providers block on the network, so the search runs off the UI thread; the app handle owns the state.
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<AppState>();
+        let audius = catalogue::providers::audius::Audius::new(state.lanes.audius.clone());
         let musicbrainz = catalogue::providers::musicbrainz::MusicBrainz::new(state.lanes.musicbrainz.clone());
         let coverart = catalogue::providers::coverart::CoverArtArchive::new(state.lanes.coverart.clone());
-        let orchestrator = catalogue::search::Orchestrator { db: &state.db, lanes: &state.lanes, providers: vec![&musicbrainz], artwork: Some(&coverart) };
+        // Audius first: a recording that can be played is worth more than the same one described.
+        let orchestrator = catalogue::search::Orchestrator { db: &state.db, lanes: &state.lanes, providers: vec![&audius, &musicbrainz], artwork: Some(&coverart) };
         let outcome = orchestrator.search(&query, scope, 60);
         let _ = catalogue::cache::prune(&state.db);
         outcome

@@ -76,6 +76,17 @@
   padding: 3px 6px;
   white-space: nowrap;
 }
+/* A playable row earns an action; it looks like the badge beside it so the row stays one piece. */
+.playBtn {
+  composes: badge;
+  color: var(--paper-1);
+  border-color: var(--paper-3);
+  cursor: pointer;
+}
+.playBtn:hover {
+  background: var(--paper-1);
+  color: var(--charcoal);
+}
 .foot {
   margin: 16px 0 0;
   color: var(--paper-3);

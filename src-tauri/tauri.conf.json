@@ -34,8 +34,8 @@
         "script-src": "'self'",
         "style-src": "'self' 'unsafe-inline'",
         "font-src": "'self' data:",
-        "img-src": "'self' data: blob: fbmedia: http://fbmedia.localhost https://fbmedia.localhost",
-        "media-src": "'self' blob: fbmedia: http://fbmedia.localhost https://fbmedia.localhost",
+        "img-src": "'self' data: blob: https: fbmedia: http://fbmedia.localhost https://fbmedia.localhost",
+        "media-src": "'self' blob: https: fbmedia: http://fbmedia.localhost https://fbmedia.localhost",
         "connect-src": "'self' ipc: http://ipc.localhost fbmedia: http://fbmedia.localhost https://fbmedia.localhost",
         "worker-src": "'self' blob:"
       }

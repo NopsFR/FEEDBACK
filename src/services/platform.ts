@@ -35,8 +35,15 @@ export const offlineUrls = new Map<number, string>();
 /** Short-lived signed URLs for your own uploads, filled in by the cloud library. */
 export const cloudUrls = new Map<number, string>();
 export const offlineArt = new Map<string, string>();
+/** Streams a provider hands over directly, keyed by the negative id the queue carries them under. */
+export const externalUrls = new Map<number, string>();
+/** Cover art for those provider tracks, which lives on the provider's own CDN. */
+export const externalArt = new Map<number, string>();
 
 export function trackUrl(id: number): string {
+  // Provider streams are the same on every platform: the URL is the track.
+  const external = externalUrls.get(id);
+  if (external) return external;
   if (isTauri) return `${mediaBase}/track/${id}`;
   const local = offlineUrls.get(id);
   if (local) return local;

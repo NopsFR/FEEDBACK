@@ -85,15 +85,33 @@ try {
     await reveal.waitFor({ timeout: 30000 });
     // Nothing unplayable should be on screen until it is asked for.
     assert.equal(await page.evaluate(() => (document.body.innerText.match(/not in your library/gi) ?? []).length), 0, `${artist}: metadata-only rows must stay out of normal results`);
+    const hidden = Number((await reveal.innerText()).match(/\d+/)?.[0] ?? 0);
+    const playable = Number((await page.getByText(/playable result/i).first().innerText().catch(() => "0 playable")).match(/\d+/)?.[0] ?? 0);
     await reveal.click();
-    await page.waitForFunction((name) => document.body.innerText.toLowerCase().includes(name.toLowerCase()), artist, { timeout: 30000 });
-    const rows = await page.evaluate(() => (document.body.innerText.match(/not in your library/gi) ?? []).length);
-    assert.ok(rows > 0, `${artist} should still be findable behind the catalogue link`);
-    found[artist] = rows;
+    await page.waitForTimeout(500);
+    assert.ok(hidden > 0, `${artist} should still be findable behind the catalogue link`);
+    found[artist] = { playable, hidden };
   }
 
+  // A provider that actually streams: the row must offer Play, and pressing it must fetch audio.
+  const audio = [];
+  page.on("response", (r) => {
+    if (/audius/.test(r.url()) && /stream/.test(r.url())) audio.push(r.status());
+  });
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  const box2 = page.getByLabel("Search", { exact: true });
+  await box2.fill("");
+  await box2.fill("lofi");
+  const play = page.getByRole("button", { name: /Play · audius/i }).first();
+  await play.waitFor({ timeout: 30000 });
+  await play.click();
+  await page.waitForFunction(() => document.querySelector('[aria-label="Pause"]') !== null, null, { timeout: 30000 });
+  await page.waitForTimeout(5000);
+  assert.ok(audio.length > 0, "pressing Play on a provider row should fetch its stream");
+  assert.ok(audio.every((s) => s < 400), `the provider stream should answer, got ${audio.join(",")}`);
+
   assert.deepEqual(errors, []);
-  console.log(`PASS: ${SITE} — signed in, library loaded, played a cloud track (${signings.length} signed links, range 206), installable as ${installable.name}; catalogue rows ${JSON.stringify(found)}`);
+  console.log(`PASS: ${SITE} — signed in, library loaded, played a cloud track (${signings.length} signed links, range 206), installable as ${installable.name}; catalogue rows ${JSON.stringify(found)}; audius stream answered ${audio.join(",")}`);
 } finally {
   await browser.close();
 }

@@ -18,7 +18,12 @@ export const EQ_PRESETS: Record<string, number[]> = {
   "late night": [2, 1, 0, 0, -1, -1, 0, 0, -1, -2],
 };
 
-type DeckName = "a" | "b";
+// Two decks feed the Web Audio graph. A third plays provider streams straight to the speakers:
+// once an element is wired into an AudioContext its audio only reaches the graph, and a
+// cross-origin stream whose host sends no CORS headers is silence there (or, with crossOrigin set,
+// refuses to load at all). Provider tracks therefore skip the graph — no EQ or visualiser on them,
+// which is the honest trade for being able to hear them.
+type DeckName = "a" | "b" | "direct";
 
 interface Deck {
   el: HTMLAudioElement;
@@ -37,23 +42,34 @@ export interface EngineEvents {
   onAdvanced: () => void;
 }
 
-function makeAudio(): HTMLAudioElement {
+function makeAudio(cors = true): HTMLAudioElement {
   const el = new Audio();
   el.preload = "auto";
-  el.crossOrigin = "anonymous";
+  if (cors) el.crossOrigin = "anonymous";
   return el;
+}
+
+/** A stream from somewhere else entirely — a provider's CDN, not FEEDBACK's own media. */
+function external(src: string): boolean {
+  if (!/^https?:/i.test(src)) return false;
+  if (src.startsWith("http://fbmedia.localhost") || src.startsWith("https://fbmedia.localhost")) return false;
+  return typeof location === "undefined" || !src.startsWith(location.origin);
 }
 
 export class AudioEngine {
   private ctx: AudioContext | null = null;
-  private decks: Record<DeckName, Deck> = { a: { el: makeAudio(), gain: null, source: null, src: null }, b: { el: makeAudio(), gain: null, source: null, src: null } };
+  private decks: Record<DeckName, Deck> = {
+    a: { el: makeAudio(), gain: null, source: null, src: null },
+    b: { el: makeAudio(), gain: null, source: null, src: null },
+    direct: { el: makeAudio(false), gain: null, source: null, src: null },
+  };
   private active: DeckName = "a";
   private eq: BiquadFilterNode[] = [];
   private master: GainNode | null = null;
   analyser: AnalyserNode | null = null;
   private volume = 0.8;
   private muted = false;
-  private gainDb: Record<DeckName, number> = { a: 0, b: 0 };
+  private gainDb: Record<DeckName, number> = { a: 0, b: 0, direct: 0 };
   private crossfadeSec = 0;
   private fading = false;
   private raf = 0;
@@ -65,7 +81,7 @@ export class AudioEngine {
 
   constructor(events: EngineEvents) {
     this.events = events;
-    for (const name of ["a", "b"] as DeckName[]) this.wire(name);
+    for (const name of ["a", "b", "direct"] as DeckName[]) this.wire(name);
   }
 
   private get deck(): Deck {
@@ -157,6 +173,8 @@ export class AudioEngine {
     const v = this.muted ? 0 : this.volume * this.volume; // perceptual curve
     if (this.master && this.ctx) this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.015);
     else for (const d of Object.values(this.decks)) d.el.volume = v;
+    // The direct deck never reaches the master gain, so it carries its own volume either way.
+    this.decks.direct.el.volume = v;
   }
 
   private applyDeckGain(name: DeckName, fade = false) {
@@ -195,6 +213,16 @@ export class AudioEngine {
   load(src: string, gainDb: number, startMs = 0, autoplay = true) {
     this.ensureGraph();
     this.cancelFade();
+    // A provider stream goes to the deck that isn't in the graph; anything of ours comes back.
+    if (external(src)) {
+      this.nextPrepared = null;
+      this.decks.a.el.pause();
+      this.decks.b.el.pause();
+      this.active = "direct";
+    } else if (this.active === "direct") {
+      this.decks.direct.el.pause();
+      this.active = "a";
+    }
     // If the requested track is already preloaded on the other deck, swap instead of reloading.
     if (this.other.src === src && this.nextPrepared === src && startMs === 0) {
       this.gainDb[this.otherName()] = gainDb;
@@ -219,8 +247,12 @@ export class AudioEngine {
     this.startClock();
   }
 
-  /** Preload what plays next (gapless / crossfade). */
+  /** Preload what plays next (gapless / crossfade). Provider streams don't take part. */
   prepareNext(src: string | null, gainDb = 0) {
+    if (this.active === "direct" || (src && external(src))) {
+      this.nextPrepared = null;
+      return;
+    }
     if (src === this.nextPrepared) return;
     this.nextPrepared = src;
     const o = this.other;

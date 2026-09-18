@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { searchCatalogue } from "@/services/catalogue";
+import { playCatalogueTrack, streamSource } from "@/services/external";
 import type { CatalogueOutcome, CatalogueTrack } from "@/services/types";
 import { Artwork } from "@/components/Artwork";
 import { Section } from "@/components/Section";
@@ -95,7 +96,7 @@ export function CatalogueResults({ query, index }: { query: string; index: numbe
   return (
     <Section index={index} title="Elsewhere in the catalogue">
       <p className={s.note}>
-        {state === "searching" ? "Looking for something playable…" : trouble(outcome) ?? summary(playable.length, catalogue.length)}
+        {state === "searching" ? "Looking for something playable…" : (playable.length ? null : trouble(outcome)) ?? summary(playable.length, catalogue.length)}
         {catalogue.length > 0 && state !== "searching" && (
           <>
             {" "}
@@ -131,9 +132,15 @@ export function CatalogueResults({ query, index }: { query: string; index: numbe
               </span>
               <span className={`mono ${s.spec}`}>{t.releaseDate?.slice(0, 4) ?? ""}</span>
               <span className={`mono ${s.spec}`}>{t.durationMs ? duration(t.durationMs) : ""}</span>
-              <span className={`mono ${s.badge}`} title={playState(t.playbackType).why}>
-                {playState(t.playbackType).label}
-              </span>
+              {streamSource(t) ? (
+                <button className={`mono ${s.playBtn}`} onClick={() => playCatalogueTrack(t)} title={`Streamed by ${streamSource(t)?.provider}`}>
+                  Play · {streamSource(t)?.provider}
+                </button>
+              ) : (
+                <span className={`mono ${s.badge}`} title={playState(t.playbackType).why}>
+                  {playState(t.playbackType).label}
+                </span>
+              )}
             </li>
           ))}
         </ul>

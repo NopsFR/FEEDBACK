@@ -31,7 +31,7 @@ pub enum ProviderClass {
 pub fn class_of(provider: &str) -> ProviderClass {
     match provider {
         "library" | "cloud" => ProviderClass::UserCloud,
-        "jamendo" => ProviderClass::FullStream,
+        "audius" | "jamendo" => ProviderClass::FullStream,
         "itunes" | "deezer" => ProviderClass::PreviewOnly,
         "musicbrainz" | "coverart" | "lrclib" | "listenbrainz" | "discogs" | "theaudiodb" => ProviderClass::MetadataOnly,
         _ => ProviderClass::MetadataOnly,
