@@ -5,6 +5,7 @@ import type { QueueState, RepeatMode } from "./queue";
 import type { Track } from "@/services/types";
 import { artUrl, trackUrl } from "@/services/platform";
 import { library } from "@/services/library";
+import { refreshCloudUrl } from "@/services/cloudLibrary";
 import { useSettings } from "@/state/settings";
 import { toast } from "@/state/ui";
 import { log } from "@/lib/log";
@@ -80,6 +81,7 @@ export const usePlayer = create<PlayerState>((set, get) => {
       lastPos = pos;
       lastDur = dur;
       posListeners.forEach((fn) => fn(pos, dur));
+      updateMediaSessionPosition(pos, dur);
       const cur = get().current;
       if (cur && !counted && dur > 0 && (listenedMs >= Math.min(dur * 0.5, 240000))) {
         counted = true;
@@ -103,15 +105,33 @@ export const usePlayer = create<PlayerState>((set, get) => {
     },
     onError: (message) => {
       const cur = get().current;
-      set({ error: message, buffering: false, playing: false });
-      toast(cur ? `Skipped “${cur.title}” — ${message.toLowerCase()}` : message, "error");
-      // avoid infinite skip loops on a queue of broken files
-      errorStreak++;
-      if (errorStreak < 5) advance(true);
-      else get().pause();
+      // A cloud link that expired while the phone was in a pocket is not a broken track: sign a
+      // new one and carry on from where it stopped. One attempt per track, then treat it as real.
+      if (cur && !resigned.has(cur.id)) {
+        resigned.add(cur.id);
+        const at = lastPos;
+        void refreshCloudUrl(cur.id).then((fresh) => {
+          if (fresh) engine.load(trackUrl(cur.id), gainFor(cur), at, true);
+          else failed(message);
+        });
+        return;
+      }
+      failed(message);
     },
   });
+
+  function failed(message: string) {
+    const cur = get().current;
+    set({ error: message, buffering: false, playing: false });
+    toast(cur ? `Skipped “${cur.title}” — ${message.toLowerCase()}` : message, "error");
+    // avoid infinite skip loops on a queue of broken files
+    errorStreak++;
+    if (errorStreak < 5) advance(true);
+    else get().pause();
+  }
   let errorStreak = 0;
+  /** Tracks we've already re-signed once this session; a second failure is a real one. */
+  const resigned = new Set<number>();
   engineRef = engine;
 
   const s = useSettings.getState();
@@ -215,6 +235,20 @@ export const usePlayer = create<PlayerState>((set, get) => {
       album: t.album,
       artwork: art ? [{ src: art, sizes: "480x480", type: "image/jpeg" }] : [],
     });
+  }
+  // The lock screen and Control Centre draw their scrubber from this; without it the bar sits at zero.
+  let lastPositionPush = 0;
+  function updateMediaSessionPosition(pos: number, dur: number) {
+    if (!("mediaSession" in navigator) || !navigator.mediaSession.setPositionState) return;
+    const now = performance.now();
+    if (now - lastPositionPush < 900) return;
+    lastPositionPush = now;
+    if (!(dur > 0) || !Number.isFinite(dur)) return;
+    try {
+      navigator.mediaSession.setPositionState({ duration: dur / 1000, position: Math.min(pos, dur) / 1000, playbackRate: 1 });
+    } catch {
+      /* a position the platform won't accept is not worth breaking playback over */
+    }
   }
   function updateMediaSessionState(playing: boolean) {
     if ("mediaSession" in navigator) navigator.mediaSession.playbackState = playing ? "playing" : "paused";

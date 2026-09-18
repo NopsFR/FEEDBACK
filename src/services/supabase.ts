@@ -121,6 +121,11 @@ export async function write(method: "POST" | "PATCH" | "DELETE", path: string, b
  */
 const signed = new Map<string, { url: string; expiresAt: number }>();
 
+/** Drop a link we know has stopped working, so the next request signs a fresh one. */
+export function forgetSignedUrl(objectPath: string): void {
+  signed.delete(objectPath);
+}
+
 export async function signedUrl(objectPath: string): Promise<string> {
   const cached = signed.get(objectPath);
   if (cached && cached.expiresAt > Date.now() / 1000 + 120) return cached.url;

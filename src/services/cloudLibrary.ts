@@ -6,7 +6,7 @@
  */
 import type { LibraryService } from "./library";
 import type { Album, AlbumDetail, Artist, ArtistDetail, Home, Overview, Playlist, PlaylistDetail, SearchResult, Track } from "./types";
-import { currentSession, select, signedUrl, write } from "./supabase";
+import { currentSession, forgetSignedUrl, select, signedUrl, write } from "./supabase";
 import { cloudUrls } from "./platform";
 
 interface CloudTrack {
@@ -107,6 +107,24 @@ export async function primeUrls(tracks: Track[]): Promise<void> {
       }
     }),
   );
+}
+
+/**
+ * A signed link only lasts a couple of hours, and a phone can sit in a pocket for longer than that.
+ * When playback fails, sign a new one rather than skipping the track: a stale link is not a
+ * missing song. Returns false when this track has no cloud copy at all.
+ */
+export async function refreshCloudUrl(id: number): Promise<boolean> {
+  const path = objects.get(id);
+  if (!path) return false;
+  forgetSignedUrl(path);
+  cloudUrls.delete(id);
+  try {
+    cloudUrls.set(id, await signedUrl(path));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** True when your account holds the audio for this track. */
