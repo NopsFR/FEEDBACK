@@ -252,9 +252,12 @@ export interface ScanProgress {
 }
 
 export interface Lyrics {
-  source: "lrc" | "txt" | "embedded";
+  /** "lrc" | "txt" | "embedded" for your own files, or a provider id such as "lrclib". */
+  source: string;
   synced: boolean;
   text: string;
+  /** The recording has no words — different from having none on file. */
+  instrumental?: boolean;
 }
 
 export interface ImportResult {

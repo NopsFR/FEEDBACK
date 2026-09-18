@@ -36,7 +36,8 @@
 - [x] MusicBrainz (identity) and Cover Art Archive (sleeves) behind that layer, with the artwork finder moved onto it; search shows catalogue results marked as metadata, never as playable
 
 ## Open
-- [ ] Catalogue: LRCLIB lyrics provider, then ListenBrainz recommendations, then Jamendo for genuinely streamable independent music (see FEEDBACK_ENGINEERING_STATUS.md)
+- [x] Catalogue: LRCLIB lyrics — synced, plain, instrumental and not-found kept distinct; your own .lrc always wins; duration-checked matching
+- [ ] Catalogue: ListenBrainz recommendations, then Jamendo for genuinely streamable independent music (see FEEDBACK_ENGINEERING_STATUS.md)
 - [ ] Developer panel: provider health, cache statistics and the search debugger (the data is already collected)
 - [ ] Enrichment pipeline: link local tracks to canonical ids by confidence, never overwriting user-edited tags
 - [~] iPhone: test on a real device (certificate trust, Home Screen install, lock-screen playback) — see MOBILE.md checklist

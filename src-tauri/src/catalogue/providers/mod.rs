@@ -1,5 +1,6 @@
 //! Provider adapters. Each one speaks to a single service and hands back FEEDBACK's own models.
 pub mod coverart;
+pub mod lrclib;
 pub mod musicbrainz;
 
 use super::net::Lane;
@@ -10,6 +11,7 @@ use std::time::Duration;
 pub struct Lanes {
     pub musicbrainz: Arc<Lane>,
     pub coverart: Arc<Lane>,
+    pub lrclib: Arc<Lane>,
 }
 
 pub fn user_agent() -> String {
@@ -25,12 +27,14 @@ impl Lanes {
             // from this address, and a personal library has no reason to push the limit.
             musicbrainz: Arc::new(Lane::new("musicbrainz", ua.clone(), Duration::from_millis(1400), Duration::from_secs(20))),
             // The Cover Art Archive publishes no rate limit; still, images are big, so go steadily.
-            coverart: Arc::new(Lane::new("coverart", ua, Duration::from_millis(250), Duration::from_secs(30))),
+            coverart: Arc::new(Lane::new("coverart", ua.clone(), Duration::from_millis(250), Duration::from_secs(30))),
+            // LRCLIB publishes no hard limit but asks clients to identify themselves and be gentle.
+            lrclib: Arc::new(Lane::new("lrclib", ua, Duration::from_millis(600), Duration::from_secs(15))),
         }
     }
 
     pub fn all(&self) -> Vec<Arc<Lane>> {
-        vec![self.musicbrainz.clone(), self.coverart.clone()]
+        vec![self.musicbrainz.clone(), self.coverart.clone(), self.lrclib.clone()]
     }
 
     pub fn by_id(&self, id: &str) -> Option<Arc<Lane>> {

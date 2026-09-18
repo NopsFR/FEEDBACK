@@ -2,12 +2,16 @@
 use serde::Serialize;
 use std::path::Path;
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Lyrics {
-    pub source: &'static str, // "lrc" | "txt" | "embedded"
+    /// "lrc" | "txt" | "embedded" for the user's own files, or a provider id such as "lrclib".
+    pub source: String,
     pub synced: bool,
     pub text: String,
+    /// True when the recording has no words at all, which is different from having none on file.
+    #[serde(default)]
+    pub instrumental: bool,
 }
 
 fn looks_synced(text: &str) -> bool {
@@ -28,10 +32,10 @@ pub fn sidecar_exists(path: &Path) -> bool {
 
 pub fn find(path: &Path) -> Option<Lyrics> {
     if let Some(t) = read_text(&path.with_extension("lrc")) {
-        return Some(Lyrics { source: "lrc", synced: looks_synced(&t), text: t });
+        return Some(Lyrics { source: "lrc".into(), synced: looks_synced(&t), text: t, instrumental: false });
     }
     if let Some(t) = read_text(&path.with_extension("txt")) {
-        return Some(Lyrics { source: "txt", synced: looks_synced(&t), text: t });
+        return Some(Lyrics { source: "txt".into(), synced: looks_synced(&t), text: t, instrumental: false });
     }
-    super::tags::embedded_lyrics(path).map(|t| Lyrics { source: "embedded", synced: looks_synced(&t), text: t })
+    super::tags::embedded_lyrics(path).map(|t| Lyrics { source: "embedded".into(), synced: looks_synced(&t), text: t, instrumental: false })
 }

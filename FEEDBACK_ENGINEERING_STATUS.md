@@ -39,11 +39,22 @@ catalogue traffic, and the Rust commands check that setting themselves rather th
 - **Playback:** none.
 - **Fallback:** the release-group cover, then the generated sleeve FEEDBACK draws itself.
 
+### LRCLIB — lyrics
+- **Why:** plain and time-synced lyrics for tracks with no `.lrc` beside them.
+- **Auth:** none. **Rate limits:** none published; FEEDBACK paces at 600ms and identifies itself.
+- **Matching:** `/api/get` takes track, artist, album and duration — the duration is what stops a
+  different recording's words being shown. `/api/search` is the fallback, and a candidate is only
+  used when its length is within four seconds of ours.
+- **Caching:** lyrics 30d, "nothing found" 7d (someone may contribute them later).
+- **Answers FEEDBACK distinguishes:** synced, plain, instrumental, not found, provider error, offline.
+  An instrumental is not an empty result and a provider outage is not "no lyrics".
+- **Your own files always win:** a `.lrc`, `.txt` or embedded lyric is used before anything online,
+  and FEEDBACK never writes provider lyrics into your files.
+
 ## Next (foundation exists, provider not yet wired)
 
 | Provider | For | Status |
 | --- | --- | --- |
-| LRCLIB | plain and synced lyrics | Next. No auth; `/api/get` matches on track, artist, album and duration; `/api/search` for looser matches. Asks for an identifying User-Agent and moderate pacing. Fits the existing `LyricsProvider` trait and FEEDBACK's `.lrc` support. |
 | ListenBrainz | recommendations, listening stats, similar recordings | After lyrics. Read endpoints are open; 1 request/second with `X-RateLimit-*` headers to respect. A user token stays optional — FEEDBACK must work without an account. |
 | Jamendo | independent music that is actually streamable | After that. Needs a developer client id, so it ships disabled until the user supplies one. This is the first provider that can return a real `PlaybackSource`. |
 

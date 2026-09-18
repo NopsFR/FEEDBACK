@@ -346,9 +346,54 @@ pub async fn track_file_path(state: S<'_>, id: i64) -> AppResult<String> {
 }
 
 #[tauri::command]
-pub async fn get_lyrics(state: S<'_>, id: i64) -> AppResult<Option<crate::metadata::lyrics::Lyrics>> {
+pub async fn get_lyrics(app: AppHandle, state: S<'_>, id: i64) -> AppResult<Option<crate::metadata::lyrics::Lyrics>> {
     let path = state.db.with(|c| mutate::track_path(c, id))?.ok_or(AppError::NotFound)?;
-    Ok(crate::metadata::lyrics::find(Path::new(&path)))
+    // The user's own .lrc, .txt or embedded lyrics always win: they may have corrected them.
+    if let Some(local) = crate::metadata::lyrics::find(Path::new(&path)) {
+        return Ok(Some(local));
+    }
+    if !lookups_allowed(&state)? {
+        return Ok(None);
+    }
+    let track = state.db.with(|c| query::tracks_by_ids(c, &[id]))?.into_iter().next().ok_or(AppError::NotFound)?;
+    let query = catalogue::LyricsQuery { title: track.title, artist: track.artist, album: Some(track.album).filter(|a| !a.is_empty()), duration_ms: Some(track.duration_ms) };
+
+    tauri::async_runtime::spawn_blocking(move || {
+        use catalogue::{LyricsProvider, LyricsStatus};
+        let state = app.state::<AppState>();
+        let key = catalogue::cache::key("lrclib", catalogue::cache::Kind::Lyrics, &format!("{}|{}|{}", query.artist, query.title, query.duration_ms.unwrap_or(0) / 1000));
+        let cached = catalogue::cache::get::<catalogue::LyricsResult>(&state.db, &key).filter(|h| h.freshness == catalogue::cache::Freshness::Fresh).map(|h| h.value);
+        let result = match cached {
+            Some(hit) => hit,
+            None => {
+                catalogue::cache::miss();
+                let provider = catalogue::providers::lrclib::Lrclib::new(state.lanes.lrclib.clone());
+                match provider.lyrics(&query) {
+                    Ok(found) => {
+                        // "Nothing on file" may change when someone contributes lyrics, so it is
+                        // trusted for a week rather than a month.
+                        let ttl = match found.status {
+                            LyricsStatus::NotFound => std::time::Duration::from_secs(60 * 60 * 24 * 7),
+                            _ => catalogue::cache::Kind::Lyrics.ttl(),
+                        };
+                        catalogue::cache::put_for(&state.db, &key, "lrclib", catalogue::cache::Kind::Lyrics, &found, ttl);
+                        found
+                    }
+                    // A provider that can't answer must not look like a track without lyrics.
+                    Err(catalogue::ProviderError::Offline) => catalogue::LyricsResult::none(LyricsStatus::Offline),
+                    Err(_) => catalogue::LyricsResult::none(LyricsStatus::ProviderError),
+                }
+            }
+        };
+        Ok(match result.status {
+            LyricsStatus::AvailableSynced => result.synced.map(|text| crate::metadata::lyrics::Lyrics { source: "lrclib".into(), synced: true, text, instrumental: false }),
+            LyricsStatus::AvailablePlain => result.plain.map(|text| crate::metadata::lyrics::Lyrics { source: "lrclib".into(), synced: false, text, instrumental: false }),
+            LyricsStatus::Instrumental => Some(crate::metadata::lyrics::Lyrics { source: "lrclib".into(), synced: false, text: String::new(), instrumental: true }),
+            _ => None,
+        })
+    })
+    .await
+    .map_err(|_| AppError::User("The lyrics lookup was interrupted.".into()))?
 }
 
 #[tauri::command]

@@ -38,12 +38,20 @@ export function Lyrics({ track }: { track: Track }) {
   }, [active, synced]);
 
   if (data === "loading") return <div className={s.state} />;
+  if (data && data.instrumental)
+    return (
+      <div className={s.state}>
+        <p className={s.none}>Instrumental.</p>
+        <p className={s.hint}>No words to follow — the catalogue says this recording has none.</p>
+      </div>
+    );
   if (!data || !lines.length)
     return (
       <div className={s.state}>
         <p className={s.none}>No lyrics for this one.</p>
         <p className={s.hint}>
           Drop a <code>.lrc</code> or <code>.txt</code> file with the same name next to the track, or embed lyrics in its tags.
+          With online lookups on, FEEDBACK also asks LRCLIB.
         </p>
       </div>
     );
@@ -60,7 +68,15 @@ export function Lyrics({ track }: { track: Track }) {
           {l.text || "·"}
         </p>
       ))}
-      <p className={s.source}>{data.source === "lrc" ? "Synced lyrics from .lrc" : data.source === "txt" ? "Lyrics from .txt" : "Lyrics from file tags"}</p>
+      <p className={s.source}>
+        {data.source === "lrc"
+          ? "Synced lyrics from .lrc"
+          : data.source === "txt"
+            ? "Lyrics from .txt"
+            : data.source === "lrclib"
+              ? `${synced ? "Synced lyrics" : "Lyrics"} from LRCLIB`
+              : "Lyrics from file tags"}
+      </p>
     </div>
   );
 }

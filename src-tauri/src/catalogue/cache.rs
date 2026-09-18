@@ -115,9 +115,14 @@ pub fn miss() {
 }
 
 pub fn put<T: Serialize>(db: &Db, key: &str, provider: &str, kind: Kind, value: &T) {
+    put_for(db, key, provider, kind, value, kind.ttl());
+}
+
+/// Same, with an explicit lifetime — for answers that deserve less trust, such as "nothing found".
+pub fn put_for<T: Serialize>(db: &Db, key: &str, provider: &str, kind: Kind, value: &T, ttl: Duration) {
     let Ok(body) = serde_json::to_string(value) else { return };
     let now = now_ms();
-    let expires = now + kind.ttl().as_millis() as i64;
+    let expires = now + ttl.as_millis() as i64;
     let _ = db.with(|c| {
         c.execute(
             "INSERT INTO cat_cache(key, provider, kind, body, fetched_at, expires_at, schema) VALUES (?1,?2,?3,?4,?5,?6,?7)
