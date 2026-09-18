@@ -39,7 +39,7 @@
 - [x] Catalogue: LRCLIB lyrics — synced, plain, instrumental and not-found kept distinct; your own .lrc always wins; duration-checked matching
 - [ ] Catalogue: ListenBrainz recommendations, then Jamendo for genuinely streamable independent music (see FEEDBACK_ENGINEERING_STATUS.md)
 - [ ] Developer panel: provider health, cache statistics and the search debugger (the data is already collected)
-- [ ] Enrichment pipeline: link local tracks to canonical ids by confidence, never overwriting user-edited tags
+- [x] Enrichment: confirming a release in the artwork finder links that album's files to canonical ids by position, length and title; weak matches are never stored and tags are never rewritten
 - [~] iPhone: test on a real device (certificate trust, Home Screen install, lock-screen playback) — see MOBILE.md checklist
 - [ ] Android build (needs Android SDK/NDK install) and native iOS (needs a Mac) — see IOS.md
 - [ ] Code signing (not available at £0), trademark check before any public release

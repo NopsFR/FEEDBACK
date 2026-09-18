@@ -7,6 +7,7 @@
 //! 3. Every request goes through the scheduler in [`net`] and the cache in [`cache`], so a provider is
 //!    asked politely, at most as often as its rules allow, and not at all when the answer is already here.
 pub mod cache;
+pub mod enrich;
 pub mod net;
 pub mod providers;
 pub mod resolve;

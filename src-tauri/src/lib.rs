@@ -122,6 +122,7 @@ pub fn run() {
             commands::set_album_art,
             commands::radio,
             commands::catalogue_search,
+            commands::catalogue_ids,
             commands::catalogue_health,
             commands::catalogue_set_provider,
             commands::catalogue_clear_cache,

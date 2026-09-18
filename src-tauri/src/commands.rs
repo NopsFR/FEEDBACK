@@ -610,11 +610,12 @@ pub async fn apply_lookup_art(app: AppHandle, state: S<'_>, album_id: i64, mbid:
         return Err(AppError::User("Turn on online lookups in Settings first.".into()));
     }
     let app2 = app.clone();
+    let art_mbid = mbid.clone();
     let bytes = tauri::async_runtime::spawn_blocking(move || {
         use catalogue::ArtworkProvider;
         let state = app2.state::<AppState>();
         let art = catalogue::providers::coverart::CoverArtArchive::new(state.lanes.coverart.clone());
-        let ids = catalogue::ExternalIds { release_mbid: Some(mbid), ..Default::default() };
+        let ids = catalogue::ExternalIds { release_mbid: Some(art_mbid), ..Default::default() };
         art.artwork(&ids, 1200).or_else(|_| art.artwork(&ids, 500)).map_err(|e| AppError::User(e.to_string()))
     })
     .await
@@ -627,8 +628,47 @@ pub async fn apply_lookup_art(app: AppHandle, state: S<'_>, album_id: i64, mbid:
         c.execute("UPDATE track SET artwork_hash = ?2 WHERE album_id = ?1", rusqlite::params![album_id, hash])?;
         Ok(())
     })?;
+
+    // The user just told FEEDBACK which release this is. Keep the identifiers — they cost one more
+    // request and they are what later features (recommendations, better matching) need. Tags are
+    // never touched.
+    let link_app = app.clone();
+    let link_mbid = mbid.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = link_app.state::<AppState>();
+        let musicbrainz = catalogue::providers::musicbrainz::MusicBrainz::new(state.lanes.musicbrainz.clone());
+        let key = catalogue::cache::key("musicbrainz", catalogue::cache::Kind::Recording, &format!("release-tracks:{link_mbid}"));
+        let tracks = match catalogue::cache::get::<Vec<catalogue::CatalogueTrack>>(&state.db, &key).filter(|h| h.freshness == catalogue::cache::Freshness::Fresh) {
+            Some(hit) => hit.value,
+            None => {
+                catalogue::cache::miss();
+                match musicbrainz.release_tracks(&link_mbid) {
+                    Ok(found) => {
+                        catalogue::cache::put(&state.db, &key, "musicbrainz", catalogue::cache::Kind::Recording, &found);
+                        found
+                    }
+                    Err(e) => {
+                        log::info!(target: "CATALOGUE", "release tracks unavailable: {e}");
+                        return;
+                    }
+                }
+            }
+        };
+        match catalogue::enrich::link_album(&state.db, album_id, &tracks, "musicbrainz") {
+            Ok(summary) => log::info!(target: "CATALOGUE", "linked album {album_id}: {} tracks ({} certain, {} likely), {} left alone", summary.linked, summary.high, summary.medium, summary.unmatched),
+            Err(e) => log::warn!(target: "CATALOGUE", "linking album {album_id} failed: {e}"),
+        }
+    });
+
     let _ = app.emit("library-changed", ());
     Ok(Some(hash))
+}
+
+/// What FEEDBACK knows about a track's canonical identity — for the details panel and for features
+/// that need an MBID. Returns nothing when the track has never been matched.
+#[tauri::command]
+pub async fn catalogue_ids(state: S<'_>, track_id: i64) -> AppResult<Option<serde_json::Value>> {
+    Ok(catalogue::enrich::ids_for(&state.db, track_id)?.map(|(ids, confidence)| serde_json::json!({ "ids": ids, "confidence": confidence })))
 }
 
 // ---------- direct downloads ----------

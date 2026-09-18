@@ -101,6 +101,20 @@ UI  →  catalogue_search command
 - `catalogue/providers/` — one adapter per service, parsing separated from fetching so the mapping
   is unit-tested against fixtures with no network.
 
+## Enrichment
+
+Picking a release in "Find artwork online…" is the user confirming what an album is, so FEEDBACK
+keeps the identifiers that come with it: one extra request fetches the release's tracks, and each
+local file is paired with one of them by position, length and title.
+
+- **High** — same position on the disc and a length within five seconds, or a matching title and length.
+- **Medium** — the title matches but the length or position doesn't.
+- **Low / none** — not stored at all. FEEDBACK would rather know nothing than record the wrong thing.
+
+A stronger match replaces a weaker one; a weaker match never overwrites a stronger one. Only
+identifiers are stored (`cat_link`) — titles, artists and tags are never rewritten, because the user
+may have corrected them by hand.
+
 ## Rules for adding a provider
 
 1. Check the current docs and terms; record them here before writing code.

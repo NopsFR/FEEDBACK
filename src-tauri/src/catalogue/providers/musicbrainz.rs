@@ -140,6 +140,65 @@ pub fn artist_from_json(v: &Value) -> Option<CatalogueArtist> {
     })
 }
 
+impl MusicBrainz {
+    /// The tracks on one release, in one request. Used after a user picks a release, so FEEDBACK can
+    /// attach canonical ids to the files they actually have.
+    pub fn release_tracks(&self, release_mbid: &str) -> ProviderResult<Vec<CatalogueTrack>> {
+        if release_mbid.len() != 36 || !release_mbid.chars().all(|c| c.is_ascii_hexdigit() || c == '-') {
+            return Err(ProviderError::Malformed("that release id doesn't look right".into()));
+        }
+        let url = format!("{BASE}/release/{release_mbid}?inc=recordings+artist-credits+isrcs&fmt=json");
+        Ok(release_tracks_from_json(&self.lane.get_json(&url)?))
+    }
+}
+
+/// A release lookup → one catalogue track per track on the disc, carrying disc and track numbers so
+/// they can be lined up against the files.
+pub fn release_tracks_from_json(v: &Value) -> Vec<CatalogueTrack> {
+    let release_mbid = text(v.get("id"));
+    let release_group_mbid = text(v.get("release-group").and_then(|g| g.get("id")));
+    let album = text(v.get("title"));
+    let (release_artist, release_artist_mbid) = credit(v.get("artist-credit"));
+    let mut out = Vec::new();
+    for (disc_index, medium) in v.get("media").and_then(Value::as_array).cloned().unwrap_or_default().iter().enumerate() {
+        let disc_no = medium.get("position").and_then(Value::as_i64).unwrap_or(disc_index as i64 + 1);
+        for track in medium.get("tracks").and_then(Value::as_array).cloned().unwrap_or_default() {
+            let recording = track.get("recording");
+            let Some(title) = text(track.get("title")).or_else(|| recording.and_then(|r| text(r.get("title")))) else { continue };
+            let (artist, artist_mbid) = match recording.and_then(|r| r.get("artist-credit")) {
+                Some(credits) => credit(Some(credits)),
+                None => (release_artist.clone(), release_artist_mbid.clone()),
+            };
+            let recording_mbid = recording.and_then(|r| text(r.get("id")));
+            out.push(CatalogueTrack {
+                canonical_id: recording_mbid.as_ref().map(|id| format!("mb:recording:{id}")).unwrap_or_else(|| format!("mb:track:{}", out.len())),
+                title,
+                artist,
+                album: album.clone(),
+                duration_ms: track.get("length").and_then(Value::as_i64).or_else(|| recording.and_then(|r| r.get("length")).and_then(Value::as_i64)).filter(|ms| *ms > 0),
+                track_no: track.get("position").and_then(Value::as_i64),
+                disc_no: Some(disc_no),
+                release_date: text(v.get("date")),
+                release_kind: None,
+                ids: ExternalIds {
+                    recording_mbid,
+                    release_mbid: release_mbid.clone(),
+                    release_group_mbid: release_group_mbid.clone(),
+                    artist_mbid,
+                    isrcs: recording.and_then(|r| r.get("isrcs")).and_then(Value::as_array).map(|a| a.iter().filter_map(|i| i.as_str().map(str::to_string)).collect()).unwrap_or_default(),
+                    ..Default::default()
+                },
+                tags: vec![],
+                artwork: ArtworkRef::default(),
+                sources: vec![],
+                metadata_sources: vec![ID.to_string()],
+                local_track_id: None,
+            });
+        }
+    }
+    out
+}
+
 impl MetadataProvider for MusicBrainz {
     fn id(&self) -> &'static str {
         ID
@@ -250,6 +309,33 @@ mod tests {
         assert!(recording_from_json(&serde_json::json!({ "id": "x" })).is_none());
         assert!(release_from_json(&serde_json::json!({})).is_none());
         assert!(artist_from_json(&serde_json::json!({ "id": "x" })).is_none());
+    }
+
+    #[test]
+    fn a_release_lookup_lines_up_with_the_files_on_disk() {
+        let release = serde_json::json!({
+            "id": "0ac2f4d4-1234-4321-9f66-6b1a6f9e6d10",
+            "title": "Kid A",
+            "date": "2000-10-02",
+            "release-group": { "id": "b8048f24-c026-3398-b23a-b5e50716cbc7" },
+            "artist-credit": [{ "name": "Radiohead", "joinphrase": "", "artist": { "id": "a74b1b7f-71a5-4011-9441-d0b5e4122711", "name": "Radiohead" } }],
+            "media": [{
+                "position": 1,
+                "tracks": [
+                    { "position": 1, "title": "Everything in Its Right Place", "length": 251000, "recording": { "id": "rec-1", "title": "Everything in Its Right Place", "isrcs": ["GBAYE0000988"] } },
+                    { "position": 2, "title": "Kid A", "length": 294000, "recording": { "id": "rec-2", "title": "Kid A" } }
+                ]
+            }]
+        });
+        let tracks = release_tracks_from_json(&release);
+        assert_eq!(tracks.len(), 2);
+        assert_eq!(tracks[0].track_no, Some(1));
+        assert_eq!(tracks[0].disc_no, Some(1));
+        assert_eq!(tracks[0].ids.recording_mbid.as_deref(), Some("rec-1"));
+        assert_eq!(tracks[0].ids.release_group_mbid.as_deref(), Some("b8048f24-c026-3398-b23a-b5e50716cbc7"));
+        assert_eq!(tracks[0].ids.isrcs, vec!["GBAYE0000988"]);
+        assert_eq!(tracks[1].artist, "Radiohead", "tracks inherit the release credit when they have none of their own");
+        assert!(release_tracks_from_json(&serde_json::json!({})).is_empty());
     }
 
     #[test]
