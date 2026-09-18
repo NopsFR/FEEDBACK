@@ -15,6 +15,7 @@ Local-first music + music-video player. Tauri 2 (Rust) + React 19 + TypeScript +
 - Run git through PowerShell (Desktop Commander), never `device_bash`: the Linux VM's git leaves a `.git/index.lock` it can't remove and reports every file as changed (no `core.autocrlf` there).
 - PowerShell `>` writes UTF-16. Redirect through `cmd /c "... > file"` when a tool has to read the output back.
 - Vite HMR goes stale when a file gains a new component; restart `.sync\dev.ps1` before screenshot QA or you'll chase phantom "X is not defined" errors.
+- Public PWA: `pnpm deploy:pwa` (builds, refuses a bundle containing localhost/LAN/privileged keys, then `vercel deploy --prod` from `.sync/deploy-pwa`). Live at https://feedback-eight-rosy-69.vercel.app. Verify with `node tests/e2e/prod-pwa.mjs` — it blocks the home network and drives the real UI, since production strips the `__feedback` dev handle.
 - User doesn't want routine status messages. Only interrupt for real blockers.
 
 ## Brand (short)
