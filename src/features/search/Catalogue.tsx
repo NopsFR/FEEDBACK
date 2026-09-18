@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
-import { call } from "@/services/ipc";
+import { searchCatalogue } from "@/services/catalogue";
 import type { CatalogueOutcome, CatalogueTrack } from "@/services/types";
 import { Artwork } from "@/components/Artwork";
 import { Section } from "@/components/Section";
-import { isTauri } from "@/services/platform";
-import { useSettings } from "@/state/settings";
 import { useNav } from "@/state/nav";
 import { duration } from "@/lib/format";
 import s from "./Catalogue.module.css";
@@ -29,22 +27,22 @@ function playState(type: CatalogueTrack["playbackType"]) {
 }
 
 export function CatalogueResults({ query, index }: { query: string; index: number }) {
-  const on = useSettings((st) => st.onlineLookups);
   const [outcome, setOutcome] = useState<CatalogueOutcome | null>(null);
   const [state, setState] = useState<"idle" | "searching" | "failed">("idle");
   const go = useNav((n) => n.go);
 
   useEffect(() => {
-    if (!on || !isTauri || query.trim().length < 2) {
+    if (query.trim().length < 2) {
       setOutcome(null);
       return;
     }
     let cancelled = false;
+    const aborter = new AbortController();
     // The library answers instantly; the catalogue may take a moment, so it waits for a pause in
     // typing rather than firing a request per keystroke.
     const timer = setTimeout(() => {
       setState("searching");
-      call<CatalogueOutcome>("catalogue_search", { query, scope: "everywhere" })
+      searchCatalogue(query, aborter.signal)
         .then((r) => {
           if (cancelled) return;
           setOutcome(r);
@@ -59,11 +57,11 @@ export function CatalogueResults({ query, index }: { query: string; index: numbe
     }, 450);
     return () => {
       cancelled = true;
+      aborter.abort();
       clearTimeout(timer);
     };
-  }, [query, on]);
+  }, [query]);
 
-  if (!on || !isTauri) return null;
   const remote = (outcome?.tracks ?? []).filter((t) => t.localTrackId == null);
   const releases = (outcome?.releases ?? []).filter((r) => r.localAlbumId == null);
   if (state === "idle" && !remote.length && !releases.length) return null;

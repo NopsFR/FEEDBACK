@@ -36,6 +36,12 @@ await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
 await cp(built, out, { recursive: true });
 await cp(path.join(root, "deploy", "vercel.json"), path.join(out, "vercel.json"));
+// The catalogue endpoint ships with the site: the phone has no provider stack of its own.
+await cp(path.join(root, "deploy", "api"), path.join(out, "api"), { recursive: true });
+// The staging folder is rebuilt every time, so hand Vercel the project it belongs to; without
+// this it cheerfully creates a new project and the phone keeps pointing at the old address.
+await mkdir(path.join(out, ".vercel"), { recursive: true });
+await cp(path.join(root, "deploy", "project.json"), path.join(out, ".vercel", "project.json"));
 
 const args = ["vercel", "deploy", "--prod", "--yes", ...process.argv.slice(2)];
 const run = spawnSync("npx", args, { cwd: out, stdio: "inherit", shell: true });

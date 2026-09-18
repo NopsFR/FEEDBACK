@@ -71,8 +71,24 @@ try {
   assert.ok(installable.icons >= 2);
   assert.ok(installable.worker, "the service worker should register on the public site");
 
+  // Search must reach past the library: the catalogue section is what makes a band you don't own
+  // findable at all, and every row has to say plainly what FEEDBACK can do with it.
+  const found = {};
+  for (const artist of ["Title Fight", "Tigers Jaw", "La Dispute", "Avenged Sevenfold"]) {
+    await page.getByRole("button", { name: "Search", exact: true }).click();
+    const box = page.getByLabel("Search", { exact: true });
+    await box.fill("");
+    await box.fill(artist);
+    const section = page.getByText("Elsewhere in the catalogue", { exact: false }).first();
+    await section.waitFor({ timeout: 30000 });
+    await page.waitForFunction((name) => document.body.innerText.toLowerCase().includes(name.toLowerCase()) && !/asking the catalogue/i.test(document.body.innerText), artist, { timeout: 30000 });
+    const rows = await page.evaluate(() => (document.body.innerText.match(/not in your library/gi) ?? []).length);
+    assert.ok(rows > 0, `${artist} should return catalogue rows the user can see`);
+    found[artist] = rows;
+  }
+
   assert.deepEqual(errors, []);
-  console.log(`PASS: ${SITE} — signed in, library loaded, played a cloud track (${signings.length} signed links, range 206), installable as ${installable.name}`);
+  console.log(`PASS: ${SITE} — signed in, library loaded, played a cloud track (${signings.length} signed links, range 206), installable as ${installable.name}; catalogue rows ${JSON.stringify(found)}`);
 } finally {
   await browser.close();
 }
