@@ -1,5 +1,6 @@
 //! IPC surface. All commands are async so SQLite work never blocks the UI thread.
 use crate::catalogue;
+use crate::cloud;
 use crate::error::{AppError, AppResult};
 use crate::library::{mutate, query, scan, watch};
 use crate::state::AppState;
@@ -739,7 +740,134 @@ pub async fn catalogue_set_provider(state: S<'_>, provider: String, enabled: boo
     Ok(())
 }
 
+/// Ask one provider for something small and well known, and report what happened. For the developer
+/// panel: a way to tell "the service is down" from "FEEDBACK is misconfigured" without guesswork.
+#[tauri::command]
+pub async fn catalogue_test_provider(app: AppHandle, provider: String) -> AppResult<serde_json::Value> {
+    tauri::async_runtime::spawn_blocking(move || {
+        use catalogue::{ArtworkProvider, LyricsProvider, MetadataProvider};
+        let state = app.state::<AppState>();
+        let started = std::time::Instant::now();
+        let outcome: Result<String, catalogue::ProviderError> = match provider.as_str() {
+            "musicbrainz" => catalogue::providers::musicbrainz::MusicBrainz::new(state.lanes.musicbrainz.clone())
+                .search_tracks("radiohead creep", 1)
+                .map(|r| format!("{} result(s)", r.len())),
+            "coverart" => {
+                // A release group that has had a sleeve on file for years.
+                let ids = catalogue::ExternalIds { release_group_mbid: Some("b8048f24-c026-3398-b23a-b5e50716cbc7".into()), ..Default::default() };
+                catalogue::providers::coverart::CoverArtArchive::new(state.lanes.coverart.clone()).artwork(&ids, 250).map(|b| format!("{} KB image", b.len() / 1024))
+            }
+            "lrclib" => catalogue::providers::lrclib::Lrclib::new(state.lanes.lrclib.clone())
+                .lyrics(&catalogue::LyricsQuery { title: "Creep".into(), artist: "Radiohead".into(), album: Some("Pablo Honey".into()), duration_ms: Some(239_000) })
+                .map(|r| format!("{:?}", r.status)),
+            _ => return Err(AppError::NotFound),
+        };
+        let ms = started.elapsed().as_millis() as u64;
+        Ok(match outcome {
+            Ok(detail) => serde_json::json!({ "ok": true, "ms": ms, "detail": detail }),
+            Err(e) => serde_json::json!({ "ok": false, "ms": ms, "detail": e.to_string() }),
+        })
+    })
+    .await
+    .map_err(|_| AppError::User("The provider test was interrupted.".into()))?
+}
+
 #[tauri::command]
 pub async fn catalogue_clear_cache(state: S<'_>, provider: Option<String>) -> AppResult<usize> {
     Ok(catalogue::cache::clear(&state.db, provider.as_deref())?)
+}
+
+// ---------- account and private cloud ----------
+
+#[tauri::command]
+pub async fn cloud_status(state: S<'_>) -> AppResult<cloud::CloudStatus> {
+    let session = cloud::auth::load(&state.db);
+    Ok(cloud::CloudStatus {
+        signed_in: session.is_some(),
+        email: session.as_ref().map(|s| s.email.clone()),
+        user_id: session.as_ref().map(|s| s.user_id.clone()),
+        base_url: cloud::BASE_URL,
+        last_error: None,
+    })
+}
+
+#[tauri::command]
+pub async fn cloud_sign_up(app: AppHandle, email: String, password: String) -> AppResult<bool> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AppState>();
+        cloud::auth::sign_up(&state.db, email.trim(), &password).map(|s| s.is_some()).map_err(|e| AppError::User(e.to_string()))
+    })
+    .await
+    .map_err(|_| AppError::User("That was interrupted.".into()))?
+}
+
+#[tauri::command]
+pub async fn cloud_sign_in(app: AppHandle, email: String, password: String) -> AppResult<cloud::CloudStatus> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AppState>();
+        let session = cloud::auth::sign_in(&state.db, email.trim(), &password).map_err(|e| AppError::User(e.to_string()))?;
+        Ok(cloud::CloudStatus { signed_in: true, email: Some(session.email), user_id: Some(session.user_id), base_url: cloud::BASE_URL, last_error: None })
+    })
+    .await
+    .map_err(|_| AppError::User("That was interrupted.".into()))?
+}
+
+#[tauri::command]
+pub async fn cloud_sign_out(state: S<'_>) -> AppResult<()> {
+    cloud::auth::sign_out(&state.db).map_err(|e| AppError::User(e.to_string()))
+}
+
+#[tauri::command]
+pub async fn cloud_reset_password(email: String) -> AppResult<()> {
+    tauri::async_runtime::spawn_blocking(move || cloud::auth::request_password_reset(email.trim()).map_err(|e| AppError::User(e.to_string())))
+        .await
+        .map_err(|_| AppError::User("That was interrupted.".into()))?
+}
+
+/// Push this device's library, playlists, favourites and plays, then bring down what changed elsewhere.
+#[tauri::command]
+pub async fn cloud_sync(app: AppHandle) -> AppResult<cloud::sync::SyncSummary> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AppState>();
+        let mut summary = cloud::sync::push(&state.db).map_err(|e| AppError::User(e.to_string()))?;
+        let pulled = cloud::sync::pull(&state.db).map_err(|e| AppError::User(e.to_string()))?;
+        summary.playlists_pulled = pulled.playlists_pulled;
+        summary.favourites_pulled = pulled.favourites_pulled;
+        let _ = app.emit("library-changed", ());
+        Ok(summary)
+    })
+    .await
+    .map_err(|_| AppError::User("The sync was interrupted.".into()))?
+}
+
+/// Upload audio for the given tracks (or the whole audio library when none are given).
+#[tauri::command]
+pub async fn cloud_upload(app: AppHandle, track_ids: Option<Vec<i64>>) -> AppResult<cloud::upload::UploadSummary> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AppState>();
+        let ids = match track_ids {
+            Some(ids) if !ids.is_empty() => ids,
+            _ => state.db.with(|c| query::all_tracks(c, "audio"))?.into_iter().map(|t| t.id).collect(),
+        };
+        let emitter = app.clone();
+        let summary = cloud::upload::upload_tracks(&state.db, &ids, |done, total, name| {
+            let _ = emitter.emit("cloud-upload-progress", serde_json::json!({ "done": done, "total": total, "name": name }));
+        })
+        .map_err(|e| AppError::User(e.to_string()))?;
+        Ok(summary)
+    })
+    .await
+    .map_err(|_| AppError::User("The upload was interrupted.".into()))?
+}
+
+/// A short-lived link for playing this track's cloud copy. Never cached: it expires.
+#[tauri::command]
+pub async fn cloud_stream_url(app: AppHandle, track_id: i64) -> AppResult<cloud::stream::StreamUrl> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AppState>();
+        let object = cloud::upload::object_for(&state.db, track_id).ok_or(AppError::NotFound)?;
+        cloud::stream::signed_url(&state.db, &object).map_err(|e| AppError::User(e.to_string()))
+    })
+    .await
+    .map_err(|_| AppError::User("That was interrupted.".into()))?
 }

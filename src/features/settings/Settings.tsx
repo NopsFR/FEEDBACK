@@ -9,6 +9,7 @@ import { useLibrary } from "@/state/library";
 import { useNav } from "@/state/nav";
 import { useSettings, type IntroMode, type ReplayGainMode } from "@/state/settings";
 import { showShortcuts } from "@/app/ShortcutsSheet";
+import { Developer } from "./Developer";
 import { toastError } from "@/state/ui";
 import { Button } from "@/components/Button";
 import { IconButton } from "@/components/IconButton";
@@ -324,6 +325,13 @@ export function Settings({ section }: { section?: string }) {
                 <dd>No account. No ads. No telemetry. Your library never leaves this device unless you sync it yourself.</dd>
               </div>
               <div>
+                <dt>Developer panel</dt>
+                <dd>
+                  <Toggle on={st.developerPanel} onChange={(v) => st.set("developerPanel", v)} label="Developer panel" />
+                  <span className={s.muted}> Provider health, cache and a search debugger.</span>
+                </dd>
+              </div>
+              <div>
                 <dt>Keyboard</dt>
                 <dd>
                   <button className={s.link} onClick={showShortcuts}>Show the shortcuts</button> — or press {navigator.platform.toLowerCase().includes("mac") ? "⌘" : "Ctrl"} /
@@ -336,6 +344,11 @@ export function Settings({ section }: { section?: string }) {
             </dl>
           </div>
         </Group>
+        {isTauri && (st.developerPanel || import.meta.env.DEV) && (
+          <Group id="developer" n="08" title="Developer">
+            <Developer />
+          </Group>
+        )}
       </div>
     </Page>
   );

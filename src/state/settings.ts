@@ -22,6 +22,8 @@ export interface Settings {
   mobileData: "wifi" | "any";
   /** Opt-in catalogue lookups (MusicBrainz / Cover Art Archive). Metadata only. */
   onlineLookups: boolean;
+  /** Shows the catalogue's provider health, cache and search debugger in Settings. */
+  developerPanel: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -40,6 +42,7 @@ export const DEFAULT_SETTINGS: Settings = {
   reducedMotion: "system",
   mobileData: "wifi",
   onlineLookups: false,
+  developerPanel: false,
 };
 
 const LOCAL_KEY = "feedback.settings.v1";

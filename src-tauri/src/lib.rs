@@ -1,4 +1,5 @@
 mod catalogue;
+mod cloud;
 mod commands;
 mod database;
 mod downloads;
@@ -121,11 +122,20 @@ pub fn run() {
             commands::edit_tracks,
             commands::set_album_art,
             commands::radio,
+            commands::cloud_status,
+            commands::cloud_sign_up,
+            commands::cloud_sign_in,
+            commands::cloud_sign_out,
+            commands::cloud_reset_password,
+            commands::cloud_sync,
+            commands::cloud_upload,
+            commands::cloud_stream_url,
             commands::catalogue_search,
             commands::catalogue_ids,
             commands::catalogue_health,
             commands::catalogue_set_provider,
             commands::catalogue_clear_cache,
+            commands::catalogue_test_provider,
             commands::lookup_album,
             commands::apply_lookup_art,
             commands::download_url,

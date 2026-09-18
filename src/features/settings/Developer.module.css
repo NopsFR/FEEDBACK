@@ -1,0 +1,122 @@
+.panel {
+  display: grid;
+  gap: 16px;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+.table th {
+  text-align: left;
+  font: 500 var(--fs-2xs) / 1 var(--font-mono);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--paper-3);
+  padding: 0 8px 8px 0;
+  border-bottom: 1px solid var(--line-1);
+}
+.table td {
+  padding: 8px 8px 8px 0;
+  border-bottom: 1px solid var(--line-1);
+  color: var(--paper-2);
+  vertical-align: baseline;
+}
+.num {
+  text-align: right;
+  padding-right: 14px;
+}
+.name {
+  color: var(--paper-1);
+}
+.state {
+  font-size: var(--fs-2xs);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  padding: 3px 6px;
+  border: 1px solid var(--line-2);
+}
+.healthy {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 40%, transparent);
+}
+.degraded,
+.rateLimited {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 40%, transparent);
+}
+.offline {
+  color: var(--error);
+  border-color: color-mix(in srgb, var(--error) 40%, transparent);
+}
+.disabled {
+  color: var(--paper-3);
+}
+.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.link {
+  color: var(--paper-3);
+  font-size: var(--fs-sm);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.link:hover,
+.link:focus-visible {
+  color: var(--paper-1);
+}
+.dim {
+  color: var(--paper-3);
+}
+.testLine,
+.errors {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--paper-3);
+}
+.errors {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.cache {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 4px;
+}
+.debug {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+.search {
+  flex: 1;
+  display: grid;
+  gap: 6px;
+}
+.search input {
+  height: 38px;
+  padding: 0 12px;
+  background: var(--ink-0);
+  border: 1px solid var(--line-2);
+  color: var(--paper-1);
+}
+.search input:focus {
+  border-color: var(--paper-3);
+}
+.result {
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+  background: var(--ink-1);
+  border-left: 2px solid var(--burgundy);
+  color: var(--paper-2);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+}

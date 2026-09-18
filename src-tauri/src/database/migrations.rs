@@ -171,6 +171,19 @@ const MIGRATIONS: &[&str] = &[
     );
     CREATE INDEX cat_link_recording ON cat_link(recording_mbid);
     "#,
+    // 7 — which cloud row a local track corresponds to, so playlists and favourites survive devices
+    r#"
+    CREATE TABLE cloud_track (
+        track_id INTEGER PRIMARY KEY REFERENCES track(id) ON DELETE CASCADE,
+        cloud_id TEXT NOT NULL,
+        match_key TEXT NOT NULL,
+        object_path TEXT,
+        uploaded_at INTEGER,
+        synced_at INTEGER NOT NULL
+    );
+    CREATE INDEX cloud_track_cloud ON cloud_track(cloud_id);
+    CREATE INDEX cloud_track_key ON cloud_track(match_key);
+    "#,
 ];
 
 pub fn run(conn: &mut Connection) -> rusqlite::Result<()> {
