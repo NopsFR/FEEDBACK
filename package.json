@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:desktop": "pnpm tauri build && node deploy/verify-desktop.mjs",
     "deploy:pwa": "pnpm build:pwa && node deploy/publish.mjs",
     "build:pwa": "tsc --noEmit && vite build --mode pwa",
     "preview": "vite preview",
