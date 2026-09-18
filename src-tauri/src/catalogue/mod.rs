@@ -9,6 +9,7 @@
 pub mod cache;
 pub mod enrich;
 pub mod net;
+pub mod playback;
 pub mod providers;
 pub mod resolve;
 pub mod search;
@@ -146,6 +147,9 @@ pub struct CatalogueTrack {
     pub metadata_sources: Vec<String>,
     /// Set when this row is (also) a track in the user's own library.
     pub local_track_id: Option<i64>,
+    /// What the player may offer for this row. Decided by the resolver, never by the metadata.
+    #[serde(default = "playback::unavailable")]
+    pub playback_type: playback::PlaybackType,
 }
 
 impl CatalogueTrack {

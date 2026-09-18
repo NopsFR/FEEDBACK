@@ -119,6 +119,9 @@ export interface ExternalIds {
   other?: Record<string, string>;
 }
 
+/** What the player may offer for a row. Decided by the resolver in Rust, never guessed here. */
+export type PlaybackType = "full" | "userCloud" | "preview" | "unavailable";
+
 export type PlaybackKind = "localFile" | "legalRemoteStream" | "externalLink" | "unavailable";
 
 export interface PlaybackSource {
@@ -151,6 +154,7 @@ export interface CatalogueTrack {
   sources: PlaybackSource[];
   metadataSources: string[];
   localTrackId: number | null;
+  playbackType: PlaybackType;
 }
 
 export interface CatalogueRelease {

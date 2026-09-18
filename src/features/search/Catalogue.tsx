@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { call } from "@/services/ipc";
-import type { CatalogueOutcome } from "@/services/types";
+import type { CatalogueOutcome, CatalogueTrack } from "@/services/types";
 import { Artwork } from "@/components/Artwork";
 import { Section } from "@/components/Section";
 import { isTauri } from "@/services/platform";
@@ -14,6 +14,20 @@ import s from "./Catalogue.module.css";
  * the library is shown by the local results above, so this section lists only the rest, and it
  * never offers a Play button it can't honour.
  */
+/** The resolver's verdict in the user's words. A row that nothing can play says so. */
+function playState(type: CatalogueTrack["playbackType"]) {
+  switch (type) {
+    case "full":
+      return { label: "Playable", why: "A full recording is available to FEEDBACK" };
+    case "userCloud":
+      return { label: "Your copy", why: "Your own upload backs this — it plays anywhere you sign in" };
+    case "preview":
+      return { label: "Preview only", why: "Only a short sample is offered for this recording" };
+    default:
+      return { label: "Not in your library", why: "FEEDBACK has no audio for this — it's a catalogue entry" };
+  }
+}
+
 export function CatalogueResults({ query, index }: { query: string; index: number }) {
   const on = useSettings((st) => st.onlineLookups);
   const [outcome, setOutcome] = useState<CatalogueOutcome | null>(null);
@@ -89,7 +103,9 @@ export function CatalogueResults({ query, index }: { query: string; index: numbe
               </span>
               <span className={`mono ${s.spec}`}>{t.releaseDate?.slice(0, 4) ?? ""}</span>
               <span className={`mono ${s.spec}`}>{t.durationMs ? duration(t.durationMs) : ""}</span>
-              <span className={`mono ${s.badge}`} title="FEEDBACK has no audio for this — it's a catalogue entry">Not in your library</span>
+              <span className={`mono ${s.badge}`} title={playState(t.playbackType).why}>
+                {playState(t.playbackType).label}
+              </span>
             </li>
           ))}
         </ul>

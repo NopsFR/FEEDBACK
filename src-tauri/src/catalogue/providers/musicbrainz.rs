@@ -95,6 +95,7 @@ pub fn recording_from_json(v: &Value) -> Option<CatalogueTrack> {
         sources: vec![],
         metadata_sources: vec![ID.to_string()],
         local_track_id: None,
+        playback_type: crate::catalogue::playback::PlaybackType::Unavailable,
         ids,
     })
 }
@@ -193,6 +194,7 @@ pub fn release_tracks_from_json(v: &Value) -> Vec<CatalogueTrack> {
                 sources: vec![],
                 metadata_sources: vec![ID.to_string()],
                 local_track_id: None,
+                playback_type: crate::catalogue::playback::PlaybackType::Unavailable,
             });
         }
     }

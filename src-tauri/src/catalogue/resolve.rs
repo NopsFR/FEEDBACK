@@ -230,6 +230,7 @@ mod tests {
             sources: vec![],
             metadata_sources: vec!["test".into()],
             local_track_id: None,
+            playback_type: crate::catalogue::playback::PlaybackType::Unavailable,
         }
     }
 

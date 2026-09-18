@@ -69,6 +69,7 @@ pub fn from_local(track: &query::TrackRow) -> CatalogueTrack {
         sources: vec![PlaybackSource::local(track.id)],
         metadata_sources: vec!["library".into()],
         local_track_id: Some(track.id),
+        playback_type: crate::catalogue::playback::PlaybackType::Unavailable,
     }
 }
 
@@ -262,6 +263,8 @@ impl Orchestrator<'_> {
 
         let mut releases = dedupe_releases(releases, &local);
         self.attach_artwork(&mut releases);
+        // Say plainly, row by row, what the player may offer. Metadata is not audio.
+        super::playback::classify_all(self.db, &mut tracks);
 
         Outcome {
             releases,
@@ -424,6 +427,7 @@ mod tests {
             sources: vec![],
             metadata_sources: vec!["fake".into()],
             local_track_id: None,
+            playback_type: crate::catalogue::playback::PlaybackType::Unavailable,
         }
     }
 
