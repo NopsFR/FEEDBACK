@@ -1,0 +1,41 @@
+.panel {
+  display: grid;
+  gap: 12px;
+}
+.body {
+  margin: 0;
+  color: var(--paper-2);
+  line-height: 1.55;
+  max-width: 64ch;
+}
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.input {
+  height: 38px;
+  min-width: 210px;
+  padding: 0 12px;
+  background: var(--ink-0);
+  border: 1px solid var(--line-2);
+  color: var(--paper-1);
+}
+.input:focus {
+  border-color: var(--paper-3);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.muted {
+  margin: 0;
+  color: var(--paper-3);
+  font-size: var(--fs-xs);
+}
+.link {
+  color: var(--paper-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

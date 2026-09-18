@@ -24,6 +24,8 @@ import { useLibrary } from "@/state/library";
 import { useSettings } from "@/state/settings";
 import { getToken, isTauri, setToken } from "@/services/platform";
 import { PairScreen } from "@/features/offline/PairScreen";
+import { SignInScreen } from "@/features/offline/SignInScreen";
+import { currentSession } from "@/services/supabase";
 import * as offline from "@/services/offline";
 import * as phone from "@/services/phone";
 import { useNav } from "@/state/nav";
@@ -71,7 +73,9 @@ function useDropImport() {
 
 export function App() {
   const [booted, setBooted] = useState(false);
-  const [paired, setPaired] = useState(() => isTauri || !!getToken());
+  // Two ways in: your account (works anywhere) or pairing with the computer (same Wi-Fi).
+  const [paired, setPaired] = useState(() => isTauri || !!getToken() || !!currentSession());
+  const [wantPairing, setWantPairing] = useState(false);
   const introMode = useSettings((st) => st.intro);
   const [introDone, setIntroDone] = useState(introMode === "off");
   useBackendEvents();
@@ -117,7 +121,9 @@ export function App() {
     };
   }, []);
 
-  if (!paired) return <PairScreen onPaired={() => setPaired(true)} />;
+  if (!paired) {
+    return wantPairing ? <PairScreen onPaired={() => setPaired(true)} /> : <SignInScreen onSignedIn={() => setPaired(true)} onPair={() => setWantPairing(true)} />;
+  }
 
   return (
     <div className={`${s.app} grain`}>

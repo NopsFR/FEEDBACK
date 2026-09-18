@@ -451,3 +451,8 @@ export const usePlayer = create<PlayerState>((set, get) => {
 export function getEngineAnalyser(): AnalyserNode | null {
   return engineRef?.analyser ?? null;
 }
+
+/** The URL the active deck is playing, for diagnostics and tests. */
+export function getEngineSrc(): string | null {
+  return engineRef?.currentSrc ?? null;
+}

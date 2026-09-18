@@ -32,12 +32,17 @@ export function setToken(t: string | null) {
 
 /** Offline blob URLs registered by the offline store (track id → object URL). */
 export const offlineUrls = new Map<number, string>();
+/** Short-lived signed URLs for your own uploads, filled in by the cloud library. */
+export const cloudUrls = new Map<number, string>();
 export const offlineArt = new Map<string, string>();
 
 export function trackUrl(id: number): string {
   if (isTauri) return `${mediaBase}/track/${id}`;
   const local = offlineUrls.get(id);
   if (local) return local;
+  // Your own cloud copy: works on mobile data with the computer switched off.
+  const cloud = cloudUrls.get(id);
+  if (cloud) return cloud;
   return `${location.origin}/media/track/${id}?t=${encodeURIComponent(getToken() ?? "")}`;
 }
 

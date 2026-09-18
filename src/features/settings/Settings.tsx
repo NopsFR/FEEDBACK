@@ -10,6 +10,7 @@ import { useNav } from "@/state/nav";
 import { useSettings, type IntroMode, type ReplayGainMode } from "@/state/settings";
 import { showShortcuts } from "@/app/ShortcutsSheet";
 import { Developer } from "./Developer";
+import { Account } from "./Account";
 import { toastError } from "@/state/ui";
 import { Button } from "@/components/Button";
 import { IconButton } from "@/components/IconButton";
@@ -246,7 +247,8 @@ export function Settings({ section }: { section?: string }) {
             </Row>
           </Group>
         )}
-        {isTauri && <Group id="library" n="01" title="Library">
+        {isTauri && <Group id="account" n="01" title="Account"><Account /></Group>}
+        {isTauri && <Group id="library" n="02" title="Library">
           <Folders />
           <DownloadLink />
           <Row label="Drag and drop" hint="Drop folders onto the window to add them. Drop files and they're copied into a “FEEDBACK Imports” folder in Music.">

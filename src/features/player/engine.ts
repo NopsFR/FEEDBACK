@@ -305,6 +305,11 @@ export class AudioEngine {
     return !this.deck.el.paused;
   }
 
+  /** What the active deck was actually handed. */
+  get currentSrc(): string | null {
+    return this.deck.src ?? (this.deck.el.src || null);
+  }
+
   get positionMs() {
     return this.deck.el.currentTime * 1000;
   }

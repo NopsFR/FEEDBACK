@@ -1,4 +1,7 @@
 import { call } from "./ipc";
+import { isTauri, getToken } from "./platform";
+import { currentSession } from "./supabase";
+import { cloudLibrary } from "./cloudLibrary";
 import type {
   Album, AlbumDetail, Artist, ArtistDetail, Folder, Genre, Home, ImportResult, Lyrics, Overview, Playlist, PlaylistDetail, SearchResult, SmartList, SmartPlaylistRules, Track,
 } from "./types";
@@ -85,7 +88,20 @@ export const tauriLibrary: LibraryService = {
   removeTracks: (ids) => call("remove_tracks", { ids }),
 };
 
-import { isTauri } from "./platform";
 import { remoteLibrary } from "./remote";
 
-export const library: LibraryService = isTauri ? tauriLibrary : remoteLibrary;
+/**
+ * Which implementation answers: the desktop's own backend, the paired computer over the LAN, or —
+ * when you're signed in and away from home — your account in the cloud.
+ */
+function implementation(): LibraryService {
+  if (isTauri) return tauriLibrary;
+  // Signed in and not paired to a computer: the account is the library, wherever you are.
+  if (currentSession() && !getToken()) return cloudLibrary;
+  return remoteLibrary;
+}
+
+// Resolved per call, because signing in or pairing changes the answer while the app is running.
+export const library: LibraryService = new Proxy({} as LibraryService, {
+  get: (_target, key: string) => (...args: unknown[]) => (implementation() as unknown as Record<string, (...a: unknown[]) => unknown>)[key](...args),
+});
