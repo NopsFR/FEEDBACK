@@ -26,12 +26,33 @@ function playState(type: CatalogueTrack["playbackType"]) {
   }
 }
 
+/** Why nothing came back, in the user's terms — never a shrug, and never silence. */
+function trouble(outcome: CatalogueOutcome | null): string | null {
+  if (!outcome) return "The catalogue didn't answer. Your library is still searchable.";
+  const failed = outcome.debug.providers.filter((p) => p.error);
+  if (!failed.length) return null;
+  const reason = failed.map((p) => p.error ?? "").join(" ");
+  if (/429|503|rate/i.test(reason)) return "The catalogue is busy right now — it asked FEEDBACK to slow down. Try again in a moment.";
+  if (/401|403|auth|sign/i.test(reason)) return "That provider needs you to sign in before it will hand over anything.";
+  if (/unreachable|network|offline/i.test(reason)) return "FEEDBACK couldn't reach the catalogue. Your library is still searchable.";
+  return "The catalogue didn't answer. Your library is still searchable.";
+}
+
+/** What the section found, said plainly: playable first, metadata counted but not paraded. */
+function summary(playable: number, metadataOnly: number): string {
+  if (playable > 0) return `${playable} playable ${playable === 1 ? "result" : "results"} from outside your library.`;
+  if (metadataOnly > 0) return "Nothing out there can be played — no provider grants FEEDBACK the audio for this. Your own copies always play.";
+  return "Nothing else found.";
+}
+
 export function CatalogueResults({ query, index }: { query: string; index: number }) {
   const [outcome, setOutcome] = useState<CatalogueOutcome | null>(null);
   const [state, setState] = useState<"idle" | "searching" | "failed">("idle");
+  const [showMetadata, setShowMetadata] = useState(false);
   const go = useNav((n) => n.go);
 
   useEffect(() => {
+    setShowMetadata(false);
     if (query.trim().length < 2) {
       setOutcome(null);
       return;
@@ -63,17 +84,26 @@ export function CatalogueResults({ query, index }: { query: string; index: numbe
   }, [query]);
 
   const remote = (outcome?.tracks ?? []).filter((t) => t.localTrackId == null);
+  // Search is for music you can hear. A recording nobody will let FEEDBACK play is a catalogue
+  // entry, not a result, so it waits behind a link instead of burying the ones that do play.
+  const playable = remote.filter((t) => t.playbackType !== "unavailable");
+  const catalogue = remote.filter((t) => t.playbackType === "unavailable");
+  const shown = showMetadata ? [...playable, ...catalogue] : playable;
   const releases = (outcome?.releases ?? []).filter((r) => r.localAlbumId == null);
-  if (state === "idle" && !remote.length && !releases.length) return null;
+  if (state !== "searching" && !shown.length && !catalogue.length && !releases.length) return null;
 
   return (
     <Section index={index} title="Elsewhere in the catalogue">
       <p className={s.note}>
-        {state === "searching"
-          ? "Asking the catalogue…"
-          : state === "failed"
-            ? "The catalogue didn't answer. Your library is still searchable."
-            : `Metadata from MusicBrainz${outcome?.debug.providers.some((p) => p.cache === "hit") ? ", from FEEDBACK's cache" : ""}. FEEDBACK has no audio for these — they're here so you know what exists.`}
+        {state === "searching" ? "Looking for something playable…" : trouble(outcome) ?? summary(playable.length, catalogue.length)}
+        {catalogue.length > 0 && state !== "searching" && (
+          <>
+            {" "}
+            <button className={s.link} onClick={() => setShowMetadata((on) => !on)}>
+              {showMetadata ? "Hide catalogue entries" : `Show ${catalogue.length} catalogue ${catalogue.length === 1 ? "entry" : "entries"}`}
+            </button>
+          </>
+        )}
       </p>
       {releases.length > 0 && (
         <ul className={s.releases}>
@@ -87,9 +117,9 @@ export function CatalogueResults({ query, index }: { query: string; index: numbe
           ))}
         </ul>
       )}
-      {remote.length > 0 && (
+      {shown.length > 0 && (
         <ul className={s.tracks}>
-          {remote.slice(0, 12).map((t) => (
+          {shown.slice(0, 12).map((t) => (
             <li key={t.canonicalId} className={s.track}>
               <Artwork hash={null} size={160} seed={t.album ?? t.title} className={s.art} />
               <span className={s.text}>

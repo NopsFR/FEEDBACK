@@ -81,9 +81,14 @@ try {
     await box.fill(artist);
     const section = page.getByText("Elsewhere in the catalogue", { exact: false }).first();
     await section.waitFor({ timeout: 30000 });
-    await page.waitForFunction((name) => document.body.innerText.toLowerCase().includes(name.toLowerCase()) && !/asking the catalogue/i.test(document.body.innerText), artist, { timeout: 30000 });
+    const reveal = page.getByRole("button", { name: /Show \d+ catalogue entr/ });
+    await reveal.waitFor({ timeout: 30000 });
+    // Nothing unplayable should be on screen until it is asked for.
+    assert.equal(await page.evaluate(() => (document.body.innerText.match(/not in your library/gi) ?? []).length), 0, `${artist}: metadata-only rows must stay out of normal results`);
+    await reveal.click();
+    await page.waitForFunction((name) => document.body.innerText.toLowerCase().includes(name.toLowerCase()), artist, { timeout: 30000 });
     const rows = await page.evaluate(() => (document.body.innerText.match(/not in your library/gi) ?? []).length);
-    assert.ok(rows > 0, `${artist} should return catalogue rows the user can see`);
+    assert.ok(rows > 0, `${artist} should still be findable behind the catalogue link`);
     found[artist] = rows;
   }
 
