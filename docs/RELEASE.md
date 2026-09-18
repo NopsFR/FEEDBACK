@@ -9,6 +9,24 @@ pnpm tauri build
 `beforeBuildCommand` runs `pnpm build && pnpm build:pwa`; the PWA is bundled as a resource (`pwa/`) for phone access.
 Output: `src-tauri/target/release/bundle/nsis/FEEDBACK_<version>_x64-setup.exe` (~7 MB).
 
+The standalone desktop executable is `src-tauri/target/release/feedback.exe`.
+Use the installer for normal Windows launches; do not point shortcuts at
+`target/debug/feedback.exe`, which needs the Vite server started by `pnpm tauri dev`.
+Close any running development instance before launching the release: the app is
+single-instance, so an existing development window otherwise receives the launch.
+
+Tauri CLI enables the production protocol and embeds `dist` in the executable.
+Plain `cargo build --release` does not do this and is rejected by the build script.
+On Windows, `http://tauri.localhost` is WebView2's internal bundled-asset origin,
+not a network server; no localhost listener, Vite process, or browser is required.
+Verify the release with Vite stopped, including Settings and its Account section.
+
+When installing from a packaged desktop assistant, Windows may redirect
+`LOCALAPPDATA` into that assistant's private package storage. For this machine,
+the verified installation and shortcuts use `C:\Users\nator\Applications\FEEDBACK`
+instead. If installing manually, choose that folder in the installer; this avoids
+a shortcut that resolves differently when launched from Explorer.
+
 ## What the installer does (verified 0.1.0)
 - Per-user install (no admin) to `%LOCALAPPDATA%\FEEDBACK\` — `feedback.exe`, `pwa\`, `uninstall.exe`.
 - Start menu shortcut `FEEDBACK.lnk`; Apps & Features entry "FEEDBACK 0.1.0" with the FEEDBACK icon.
